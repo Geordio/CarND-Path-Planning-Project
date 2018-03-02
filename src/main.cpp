@@ -23,6 +23,8 @@ constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
+int lane = 1;
+double ref_vel = 0; //49.5
 
 //bool GotoXY( unsigned x, unsigned y )
 //  {
@@ -326,13 +328,65 @@ int main() {
 //          vector<double> next_x_vals;
 //          vector<double> next_y_vals;
 
-          int lane = 1;
-          double ref_vel = 49.5;
+
           int prev_size = previous_path_x.size();
 
           // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
 
           // added based on walk through
+
+
+          if(prev_size>0)
+          {
+
+            car_s = end_path_s;
+
+          }
+
+
+          bool too_close = false;
+
+          // TODO make constants at the start
+          int safety_distance= 30;
+          int sf_vx_ind = 3;
+          int sf_vy_ind = 4;
+          int sf_s_ind = 5;
+
+          // find ref_v to use
+          for (int i = 0 ; i < sensor_fusion.size(); i++){
+            // cars is in my lane
+            float d = sensor_fusion[i][6];
+            if(d< (2+4*lane+2) && d>(2+4*lane-2)){
+              double vx = sensor_fusion[i][sf_vx_ind];
+              double vy = sensor_fusion[i][sf_vy_ind];
+              double check_speed = sqrt(vx*vx+vy*vy);
+              double check_car_s = sensor_fusion[i][sf_s_ind];
+
+              // if using previous path points then we can project s value out to see what the car position will be in the future
+              check_car_s += ((double)prev_size*0.02*check_speed);
+              //check if the s values are greater than ego car and a safety distance
+              if ((check_car_s > car_s) && ((check_car_s- car_s) < safety_distance)) {
+//                ref_vel = 29.5;
+                 too_close = true;
+              }
+
+
+            }
+
+          }
+
+
+          if (too_close) {
+            ref_vel -=0.224;
+
+          }
+          else if(ref_vel < 49.5)
+          {
+             ref_vel += 0.224;
+          }
+
+
+
           OutputData(data0y, labelEgoCoordxy, std::to_string(car_x));
           OutputData(data0y, labelEgoCoordyy, std::to_string(car_y));
 
@@ -455,6 +509,16 @@ int target_s = 30;
 
           // fill up the rest of the path planner, appending to the original points. Always output 50 points
           for (int i = 1; i <= no_of_pts - previous_path_x.size(); i++) {
+
+//            if(ref_vel > car_speed)
+//            {
+////              car_speed += 0.224;
+//              car_speed += 0.1;
+//            }
+//            else if(ref_vel < car_speed)
+//            {
+//              car_speed -= 0.1;
+//            }
 
 
             double N = (target_dist / (0.02 * ref_vel / 2.24));
