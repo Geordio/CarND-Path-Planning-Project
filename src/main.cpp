@@ -54,6 +54,8 @@ int labelEgoCoorddy = 8;
 int labelEgoVx = 0;
 int labelEgoVy = 9;
 int labelNoWayPtsy = 10;
+int labelEgoStatey =0;
+//int labelLane0y;
 
 
 void SetCursorPos(int XPos, int YPos)
@@ -368,7 +370,13 @@ int main() {
               if ((check_car_s > car_s) && ((check_car_s- car_s) < safety_distance)) {
 //                ref_vel = 29.5;
                  too_close = true;
+
+                 if(lane >0)
+                 {
+                   lane = 0;
+                 }
               }
+
 
 
             }
@@ -378,6 +386,7 @@ int main() {
 
           if (too_close) {
             ref_vel -=0.224;
+//            ref_vel = check_car_s;
 
           }
           else if(ref_vel < 49.5)
