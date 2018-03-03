@@ -90,6 +90,15 @@ Car car = Car();
 Lane ln;
 
 
+struct lane_delta_s_comparer
+{
+  bool operator()(const Car& lhs, const Car& rhs)
+  {
+    return lhs.car_delta_s > rhs.car_delta_s;
+  }
+};
+
+
 void SetCursorPos(int XPos, int YPos)
 {
  printf("\033[%d;%dH", YPos+1, XPos+1);
@@ -252,6 +261,34 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
     }
 int count_of_msgs = 0;
 
+void output_traffic_debug(vector<Car> lane_cars, int datax) {
+  for (int i = 0; i < 6; i++) {
+    OutputData(datax, labelCar0_0y + i * labelCarOffsety, "               ");
+    OutputData(datax, labelCar0_1y + i * labelCarOffsety, "               "); //,"veh 1 d: ");
+    OutputData(datax, labelCar0_2y + i * labelCarOffsety, "               "); //,"veh 2 s: ");
+    OutputData(datax, labelCar0_3y + i * labelCarOffsety, "               "); //,"veh 3 v: ");
+    OutputData(datax, labelCar0_4y + i * labelCarOffsety, "               "); //,"veh 3 v: ");
+    OutputData(datax, labelCar0_5y + i * labelCarOffsety, "               "); //,"veh 3 v: ");
+  }
+  for (int i = 0; i < lane_cars.size(); i++) {
+    //            cout << "\t\t\t\\t\t\tLANE1: " << lane1_count << ", " << lane1_cars.size() << endl;
+    Car car = lane_cars[i];
+    OutputData(datax, labelCar0_0y + i * labelCarOffsety,
+        std::to_string(car.car_id));
+    OutputData(datax, labelCar0_1y + i * labelCarOffsety,
+        std::to_string(car.car_d)); //,"veh 1 d: ");
+    OutputData(datax, labelCar0_2y + i * labelCarOffsety,
+        std::to_string(car.car_s)); //,"veh 2 s: ");
+    OutputData(datax, labelCar0_3y + i * labelCarOffsety,
+        std::to_string(car.getSpeedMph())); //,"veh 3 v: ");
+    OutputData(datax, labelCar0_4y + i * labelCarOffsety,
+        std::to_string(car.car_delta_s)); //,"veh 4 delta s: ");
+    OutputData(datax, labelCar0_5y + i * labelCarOffsety,
+        std::to_string(car.car_projected_delta_s)); //,"veh 4 delta s: ");
+    //            OutputData(data0x, labelCar0_5y + i * labelCar0_6_offset, std::to_string(car.car_id));//,"veh 5 state: ");
+  }
+}
+
 int main() {
   uWS::Hub h;
 
@@ -289,7 +326,7 @@ int main() {
   OutputData(labelEgoCoordsx, labelCar0_2y,"veh 2 s: ");
   OutputData(labelEgoCoordsx, labelCar0_3y,"veh 3 v: ");
   OutputData(labelEgoCoordsx, labelCar0_4y,"veh 4 delta s: ");
-  OutputData(labelEgoCoordsx, labelCar0_5y,"veh 5 state: ");
+  OutputData(labelEgoCoordsx, labelCar0_5y,"veh 5 proj s: ");
 
 //  OutputData(data0x, labelLaney, std::to_string(lane0_count));
 //  OutputData(data1x, labelLaney, std::to_string(lane1_count));
@@ -439,175 +476,150 @@ int main() {
             double check_speed = sqrt(vx*vx+vy*vy);
             double check_car_s = sensor_fusion[i][sf_s_ind];
             double delta_s = check_car_s - car_s;
-//            cout << "                                                              " << delta_s<<endl;
-            Car this_car= Car(id,check_car_s,d,check_speed, delta_s);
+            double projected_s = check_car_s + ((double)(prev_size) * 0.02 * check_speed);
+                double projected_delta_s = check_car_s - projected_s;
+                //            cout << "                                                              " << delta_s<<endl;
+                Car this_car = Car(id, check_car_s, d, check_speed, delta_s, projected_s, projected_delta_s);
+                //lane 0
+                if (d < (2 + 4 * lane0 + 2) && d > (2 + 4 * lane0 - 2)) {
+                  lane0_count++;
+                  lane0_cars.push_back(this_car);
+                  if (check_car_s > car_s) {
+                    lane0_ahead_count++;
+                    //                lane0_cars.push_back(this_car);
+                  }
+                }
+                else
+                if (d < (2 + 4 * lane1 + 2) && d > (2 + 4 * lane1 - 2)) {
+                  lane1_count++;
+                  lane1_cars.push_back(this_car);
+                  if (check_car_s > car_s) {
+                    lane1_ahead_count++;
+                    //                lane1_cars.push_back(this_car);
+                  }
+                }
+                else
+                if (d < (2 + 4 * lane2 + 2) && d > (2 + 4 * lane2 - 2)) {
+                  lane2_count++;
+                  lane2_cars.push_back(this_car);
+                  if (check_car_s > car_s) {
+                    lane2_ahead_count++;
+                    //                lane2_cars.push_back(this_car);
+                  }
+                }
 
+                if (d < (2 + 4 * lane + 2) && d > (2 + 4 * lane - 2)) {
+                  // TODO move this further up so that it can be used to analyse all lanes
+                  //              double vx = sensor_fusion[i][sf_vx_ind];
+                  //              double vy = sensor_fusion[i][sf_vy_ind];
+                  //              double check_speed = sqrt(vx*vx+vy*vy);
+                  //              double check_car_s = sensor_fusion[i][sf_s_ind];
+                  //
+                  //              // calculate the distance between the ego and target car
+                  //              double delta_s = check_car_s - car_s;
+                  // if using previous path points then we can project s value out to see what the car position will be in the future
+                  check_car_s += ((double)(prev_size) * 0.02 * check_speed);
+                  //check if the s values are greater than ego car and a safety distance
+                  if ((check_car_s > car_s) && ((check_car_s - car_s) < safety_distance)) {
+                    //                ref_vel = 29.5;
+                    too_close = true;
+                    //                 lead_veh_speed = check_car_s;
+                    //                 if(lane >0)
+                    //                 {
+                    //                   lane = 0;
+                    //
+                    //                 }
+                  }
+                }
 
-            //lane 0
-            if(d< (2+4*lane0+2) && d>(2+4*lane0-2)){
-              lane0_count++;
-                              lane0_cars.push_back(this_car);
-              if (check_car_s > car_s) {
-                lane0_ahead_count++;
-//                lane0_cars.push_back(this_car);
               }
 
-            }
-            else if (d< (2+4*lane1+2) && d>(2+4*lane1-2)){
-              lane1_count++;
-                              lane1_cars.push_back(this_car);
-              if (check_car_s > car_s) {
-                lane1_ahead_count++;
-//                lane1_cars.push_back(this_car);
+              if (too_close) {
+                ref_vel -= 0.224;
+                //            ref_vel = lead_veh_speed;
+              } else
+              if (ref_vel < 49.5) {
+                ref_vel += 0.224;
               }
 
-            }
-            else if (d< (2+4*lane2+2) && d>(2+4*lane2-2)){
-              lane2_count++;
-                              lane2_cars.push_back(this_car);
-              if (check_car_s > car_s) {
-                lane2_ahead_count++;
-//                lane2_cars.push_back(this_car);
+              std::sort(lane0_cars.begin(), lane0_cars.end(), lane_delta_s_comparer());
+              std::sort(lane1_cars.begin(), lane1_cars.end(), lane_delta_s_comparer());
+              std::sort(lane2_cars.begin(), lane2_cars.end(), lane_delta_s_comparer());
+
+
+//              OutputData(data0x, labelEgoCoordxy, std::to_string(car_x));
+//              OutputData(data0x, labelEgoCoordyy, std::to_string(car_y));
+//              OutputData(data0x, labelEgoCoordsy, std::to_string(car_s));
+//              OutputData(data0x, labelEgoCoorddy, std::to_string(car_d));
+//              OutputData(data0x, labelLaneCnty, std::to_string(lane0_count));
+//              OutputData(data1x, labelLaneCnty, std::to_string(lane1_count));
+//              OutputData(data2x, labelLaneCnty, std::to_string(lane2_count));
+//              OutputData(data0x, labelLaneAhdCnty, std::to_string(lane0_ahead_count));
+//              OutputData(data1x, labelLaneAhdCnty, std::to_string(lane1_ahead_count));
+//              OutputData(data2x, labelLaneAhdCnty, std::to_string(lane2_ahead_count));
+//              //          OutputData(data0x, labelLaneAhdCnty, std::to_string(lane2_ahead_count));
+//              //          OutputData(data0x, labelLaneNxtSy, std::to_string(lane0_ahead_count));
+//              for (int i = 0;i < 6;i++) {
+//                OutputData(data0x, labelCar0_0y + i * labelCarOffsety, "               ");
+//                OutputData(data0x, labelCar0_1y + i * labelCarOffsety, "               "); //,"veh 1 d: ");
+//                OutputData(data0x, labelCar0_2y + i * labelCarOffsety, "               ");//,"veh 2 s: ");
+//                OutputData(data0x, labelCar0_3y + i * labelCarOffsety, "               ");//,"veh 3 v: ");
+//                OutputData(data0x, labelCar0_4y + i * labelCarOffsety, "               ");//,"veh 2 s: ");
+//                OutputData(data0x, labelCar0_5y + i * labelCarOffsety, "               ");//,"veh 3 v: ");
+//              }
+//              //          if (lane0_cars == NULL){
+//              for (int i = 0;i < lane0_cars.size();i++) {
+//                Car car = lane0_cars[i];
+//                //            OutputData(data0x, labelCar0_0y + i * labelCarOffsety, std::to_string(car.car_id));
+//                //            OutputData(data0x, labelCar0_1y + i * labelCarOffsety, std::to_string(car.car_d));//,"veh 1 d: ");
+//                //            OutputData(data0x, labelCar0_2y + i * labelCarOffsety, std::to_string(car.car_s));//,"veh 2 s: ");
+//                //            OutputData(data0x, labelCar0_3y + i * labelCarOffsety, std::to_string(car.getSpeedMph()));//,"veh 3 v: ");
+//                OutputData(data0x, labelCar0_4y + i * labelCarOffsety, std::to_string(car.car_delta_s));//,"veh 4 delta s: ");
+//                OutputData(data0x, labelCar0_5y + i * labelCarOffsety, std::to_string(car.car_projected_delta_s));//,"veh 4 delta s: ");
+//                //            OutputData(data0x, labelCar0_5y + i * labelCar0_6_offset, std::to_string(car.car_id));//,"veh 5 state: ");
+//              }
+//              //          }
+//              for (int i = 0;i < 6;i++) {
+//                OutputData(data1x, labelCar0_0y + i * labelCarOffsety, "               ");
+//                OutputData(data1x, labelCar0_1y + i * labelCarOffsety, "               "); //,"veh 1 d: ");
+//                OutputData(data1x, labelCar0_2y + i * labelCarOffsety, "               ");//,"veh 2 s: ");
+//                OutputData(data1x, labelCar0_3y + i * labelCarOffsety, "               ");//,"veh 3 v: ");
+//                OutputData(data1x, labelCar0_4y + i * labelCarOffsety, "               ");//,"veh 3 v: ");
+//                OutputData(data1x, labelCar0_5y + i * labelCarOffsety, "               ");//,"veh 3 v: ");
+//              }
+//              for (int i = 0;i < lane1_cars.size();i++) {
+//                //            cout << "\t\t\t\\t\t\tLANE1: " << lane1_count << ", " << lane1_cars.size() << endl;
+//                Car car = lane1_cars[i];
+//                //            OutputData(data1x, labelCar0_0y + i * labelCarOffsety, std::to_string(car.car_id));
+//                //            OutputData(data1x, labelCar0_1y + i * labelCarOffsety, std::to_string(car.car_d));//,"veh 1 d: ");
+//                //            OutputData(data1x, labelCar0_2y + i * labelCarOffsety, std::to_string(car.car_s));//,"veh 2 s: ");
+//                //            OutputData(data1x, labelCar0_3y + i * labelCarOffsety, std::to_string(car.getSpeedMph()));//,"veh 3 v: ");
+//                OutputData(data1x, labelCar0_4y + i * labelCarOffsety, std::to_string(car.car_delta_s));//,"veh 4 delta s: ");
+//                OutputData(data1x, labelCar0_5y + i * labelCarOffsety, std::to_string(car.car_projected_delta_s));//,"veh 4 delta s: ");
+//                //            OutputData(data0x, labelCar0_5y + i * labelCar0_6_offset, std::to_string(car.car_id));//,"veh 5 state: ");
+//              }
+
+              output_traffic_debug(lane0_cars, data0x);
+              output_traffic_debug(lane1_cars, data1x);
+              output_traffic_debug(lane2_cars, data2x);
+
+              if (prev_size > 0) {
+
+                car_s = end_path_s;
               }
-
-            }
-
-
-            if(d< (2+4*lane+2) && d>(2+4*lane-2)){
-
-// TODO move this further up so that it can be used to analyse all lanes
-//              double vx = sensor_fusion[i][sf_vx_ind];
-//              double vy = sensor_fusion[i][sf_vy_ind];
-//              double check_speed = sqrt(vx*vx+vy*vy);
-//              double check_car_s = sensor_fusion[i][sf_s_ind];
-//
-//              // calculate the distance between the ego and target car
-//              double delta_s = check_car_s - car_s;
-
-
-              // if using previous path points then we can project s value out to see what the car position will be in the future
-              check_car_s += ((double)prev_size*0.02*check_speed);
-              //check if the s values are greater than ego car and a safety distance
-              if ((check_car_s > car_s) && ((check_car_s- car_s) < safety_distance)) {
-//                ref_vel = 29.5;
-                 too_close = true;
-//                 lead_veh_speed = check_car_s;
-//                 if(lane >0)
-//                 {
-//                   lane = 0;
-//
-//                 }
-              }
-
-
-
-            }
-
-          }
-
-
-          if (too_close) {
-            ref_vel -=0.224;
-//            ref_vel = lead_veh_speed;
-
-          }
-          else if(ref_vel < 49.5)
-          {
-             ref_vel += 0.224;
-          }
-
-
-
-
-
-          OutputData(data0x, labelEgoCoordxy, std::to_string(car_x));
-          OutputData(data0x, labelEgoCoordyy, std::to_string(car_y));
-          OutputData(data0x, labelEgoCoordsy, std::to_string(car_s));
-          OutputData(data0x, labelEgoCoorddy, std::to_string(car_d));
-
-          OutputData(data0x, labelLaneCnty, std::to_string(lane0_count));
-          OutputData(data1x, labelLaneCnty, std::to_string(lane1_count));
-          OutputData(data2x, labelLaneCnty, std::to_string(lane2_count));
-          OutputData(data0x, labelLaneAhdCnty, std::to_string(lane0_ahead_count));
-          OutputData(data1x, labelLaneAhdCnty, std::to_string(lane1_ahead_count));
-          OutputData(data2x, labelLaneAhdCnty, std::to_string(lane2_ahead_count));
-
-
-
-
-//          OutputData(data0x, labelLaneAhdCnty, std::to_string(lane2_ahead_count));
-//          OutputData(data0x, labelLaneNxtSy, std::to_string(lane0_ahead_count));
-
-          for (int i = 0; i < 6; i++) {
-            OutputData(data0x, labelCar0_0y + i * labelCarOffsety, "               ");
-            OutputData(data0x, labelCar0_1y + i * labelCarOffsety, "               ");//,"veh 1 d: ");
-            OutputData(data0x, labelCar0_2y + i * labelCarOffsety, "               ");//,"veh 2 s: ");
-            OutputData(data0x, labelCar0_3y + i * labelCarOffsety, "               ");//,"veh 3 v: ");
-          }
-
-
-//          if (lane0_cars == NULL){
-          for (int i = 0; i < lane0_cars.size(); i++) {
-            Car car = lane0_cars[i];
-            OutputData(data0x, labelCar0_0y + i * labelCarOffsety, std::to_string(car.car_id));
-            OutputData(data0x, labelCar0_1y + i * labelCarOffsety, std::to_string(car.car_d));//,"veh 1 d: ");
-            OutputData(data0x, labelCar0_2y + i * labelCarOffsety, std::to_string(car.car_s));//,"veh 2 s: ");
-            OutputData(data0x, labelCar0_3y + i * labelCarOffsety, std::to_string(car.getSpeedMph()));//,"veh 3 v: ");
-            OutputData(data0x, labelCar0_4y + i * labelCarOffsety, std::to_string(car.car_delta_s));//,"veh 4 delta s: ");
-//            OutputData(data0x, labelCar0_5y + i * labelCar0_6_offset, std::to_string(car.car_id));//,"veh 5 state: ");
-
-                        cout << "                                                              " << car.car_delta_s<<endl;
-          }
-//          }
-
-          for (int i = 0; i < 6; i++) {
-            OutputData(data1x, labelCar0_0y + i * labelCarOffsety, "               ");
-            OutputData(data1x, labelCar0_1y + i * labelCarOffsety, "               ");//,"veh 1 d: ");
-            OutputData(data1x, labelCar0_2y + i * labelCarOffsety, "               ");//,"veh 2 s: ");
-            OutputData(data1x, labelCar0_3y + i * labelCarOffsety, "               ");//,"veh 3 v: ");
-          }
-
-
-          for (int i = 0; i < lane1_cars.size(); i++) {
-//            cout << "\t\t\t\\t\t\tLANE1: " << lane1_count << ", " << lane1_cars.size() << endl;
-            Car car = lane1_cars[i];
-            OutputData(data1x, labelCar0_0y + i * labelCarOffsety, std::to_string(car.car_id));
-            OutputData(data1x, labelCar0_1y + i * labelCarOffsety, std::to_string(car.car_d));//,"veh 1 d: ");
-            OutputData(data1x, labelCar0_2y + i * labelCarOffsety, std::to_string(car.car_s));//,"veh 2 s: ");
-            OutputData(data1x, labelCar0_3y + i * labelCarOffsety, std::to_string(car.getSpeedMph()));//,"veh 3 v: ");
-            OutputData(data1x, labelCar0_4y + i * labelCarOffsety, std::to_string(car.car_delta_s));//,"veh 4 delta s: ");
-//            OutputData(data0x, labelCar0_5y + i * labelCar0_6_offset, std::to_string(car.car_id));//,"veh 5 state: ");
-
-          }
-
-
-
-
-          if (prev_size > 0)
-          {
-            car_s = end_path_s;
-          }
-
-          vector<double> ptsx;
-          vector<double> ptsy;
-          double ref_x = car_x;
-          double ref_y = car_y;
-          double ref_yaw = deg2rad(car_yaw);
-
-          if (prev_size < 2)
-          {
-            double prev_car_x = car_x - cos(car_yaw);
-            double prev_car_y = car_y - sin(car_yaw);
-
-            ptsx.push_back(prev_car_x);
-            ptsx.push_back(car_x);
-
-            ptsy.push_back(prev_car_y);
-            ptsy.push_back(car_y);
-
-          }
-          // use the previous paths end point as the starting point
-          else
+              vector<double> ptsx;
+              vector<double> ptsy;
+              double ref_x = car_x;
+              double ref_y = car_y;
+              double ref_yaw = deg2rad(car_yaw);
+              if (prev_size < 2) {
+                double prev_car_x = car_x - cos(car_yaw);
+                double prev_car_y = car_y - sin(car_yaw);
+                ptsx.push_back(prev_car_x);
+                ptsx.push_back(car_x);
+                ptsy.push_back(prev_car_y);
+                ptsy.push_back(car_y);
+              } else // use the previous paths end point as the starting point
           {
             ref_x = previous_path_x[prev_size-1];
             ref_y = previous_path_y[prev_size-1];

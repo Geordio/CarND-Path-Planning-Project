@@ -5,7 +5,13 @@
  *      Author: george
  */
 
+
 #include "lane.h"
+#include "car.h"
+#include <vector>
+
+
+using namespace std;
 
 Lane::Lane() {
   // TODO Auto-generated constructor stub
