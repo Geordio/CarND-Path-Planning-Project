@@ -23,19 +23,23 @@ public:
   Car getNearestBehindCar();
   double getLaneAvgSpeed();
   int getNoAheadCars();
-  int getNoThreatCars();
+  int noThreatCars =0;
   vector<Car> getThreatCars();
   double getLaneCost();
   vector<Car> getCars(Car car);
   void addCar(Car car);
+
+  void evaluate();
 
   vector<Car> lane_cars;
 
   bool hasThreatCars = false;
   bool hasAheadCar = false;
   bool hasCar = false;
-  double threatZoneFrontLimit = 40;
-  double threatZoneRearLimit = -20;
+  double threatZoneFrontLimit = 10;
+  double threatZoneRearLimit = -30;
+  double ahead_car_speed = 0;
+
 };
 
 #endif /* LANE_H_ */

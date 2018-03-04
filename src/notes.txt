@@ -1,0 +1,10 @@
+Changing lane
+
+calcualte the cost of each lane
+
+decide the best lane based on potential speed and safety
+have a bias towards the inside lane, so that if not overtaking you are in inside lane
+
+if best lane is not an adjancent lane then treat it as 2 seperate lane changes
+- mean need to have slightly different cost calcualtions here. i.e do we need to check the safety of the 2nd of the changes to start with?
+
