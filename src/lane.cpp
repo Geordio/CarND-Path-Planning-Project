@@ -53,7 +53,7 @@ Car Lane::getNearestBehindCar(){
   for (int i = 0; i < this->lane_cars.size(); i++){
     if (this->lane_cars[i].car_projected_delta_s < 0 ) {
       if (abs(this->lane_cars[i].car_projected_delta_s) < nearest_s) {
-        nearest_s = this->lane_cars[i].car_projected_delta_s;
+        nearest_s = abs(this->lane_cars[i].car_projected_delta_s);
         nearest_behind_car = this->lane_cars[i];
 //        nearest = this->lane_cars[i];
       }
