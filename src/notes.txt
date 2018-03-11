@@ -8,3 +8,16 @@ have a bias towards the inside lane, so that if not overtaking you are in inside
 if best lane is not an adjancent lane then treat it as 2 seperate lane changes
 - mean need to have slightly different cost calcualtions here. i.e do we need to check the safety of the 2nd of the changes to start with?
 
+CMakeFiles/path_planning.dir/src/lane.cpp.o: In function `bool __gnu_cxx::__ops::_Iter_comp_iter<Lane::lane_delta_s_comparer>::operator()<__gnu_cxx::__normal_iterator<Car*, std::vector<Car, std::allocator<Car> > >, __gnu_cxx::__normal_iterator<Car*, std::vector<Car, std::allocator<Car> > > >(__gnu_cxx::__normal_iterator<Car*, std::vector<Car, std::allocator<Car> > >, __gnu_cxx::__normal_iterator<Car*, std::vector<Car, std::allocator<Car> > >)':
+lane.cpp:(.text._ZN9__gnu_cxx5__ops15_Iter_comp_iterIN4Lane21lane_delta_s_comparerEEclINS_17__normal_iteratorIP3CarSt6vectorIS7_SaIS7_EEEESC_EEbT_T0_[_ZN9__gnu_cxx5__ops15_Iter_comp_iterIN4Lane21lane_delta_s_comparerEEclINS_17__normal_iteratorIP3CarSt6vectorIS7_SaIS7_EEEESC_EEbT_T0_]+0x41): undefined reference to `Lane::lane_delta_s_comparer::operator()(Car const&, Car const&)'
+CMakeFiles/path_planning.dir/src/lane.cpp.o: In function `bool __gnu_cxx::__ops::_Val_comp_iter<Lane::lane_delta_s_comparer>::operator()<Car, __gnu_cxx::__normal_iterator<Car*, std::vector<Car, std::allocator<Car> > > >(Car&, __gnu_cxx::__normal_iterator<Car*, std::vector<Car, std::allocator<Car> > >)':
+lane.cpp:(.text._ZN9__gnu_cxx5__ops14_Val_comp_iterIN4Lane21lane_delta_s_comparerEEclI3CarNS_17__normal_iteratorIPS6_St6vectorIS6_SaIS6_EEEEEEbRT_T0_[_ZN9__gnu_cxx5__ops14_Val_comp_iterIN4Lane21lane_delta_s_comparerEEclI3CarNS_17__normal_iteratorIPS6_St6vectorIS6_SaIS6_EEEEEEbRT_T0_]+0x32): undefined reference to `Lane::lane_delta_s_comparer::operator()(Car const&, Car const&)'
+CMakeFiles/path_planning.dir/src/lane.cpp.o: In function `bool __gnu_cxx::__ops::_Iter_comp_val<Lane::lane_delta_s_comparer>::operator()<__gnu_cxx::__normal_iterator<Car*, std::vector<Car, std::allocator<Car> > >, Car>(__gnu_cxx::__normal_iterator<Car*, std::vector<Car, std::allocator<Car> > >, Car&)':
+lane.cpp:(.text._ZN9__gnu_cxx5__ops14_Iter_comp_valIN4Lane21lane_delta_s_comparerEEclINS_17__normal_iteratorIP3CarSt6vectorIS7_SaIS7_EEEES7_EEbT_RT0_[_ZN9__gnu_cxx5__ops14_Iter_comp_valIN4Lane21lane_delta_s_comparerEEclINS_17__normal_iteratorIP3CarSt6vectorIS7_SaIS7_EEEES7_EEbT_RT0_]+0x32): undefined reference to `Lane::lane_delta_s_comparer::operator()(Car const&, Car const&)'
+collect2: error: ld returned 1 exit status
+CMakeFiles/path_planning.dir/build.make:146: recipe for target 'path_planning' failed
+make[2]: *** [path_planning] Error 1
+CMakeFiles/Makefile2:67: recipe for target 'CMakeFiles/path_planning.dir/all' failed
+make[1]: *** [CMakeFiles/path_planning.dir/all] Error 2
+Makefile:83: recipe for target 'all' failed
+make: *** [all] Error 2

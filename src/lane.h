@@ -18,12 +18,11 @@ public:
   Lane();
   virtual ~Lane();
 
-  int laneNumber;
+
   Car getNearestAheadCar();
   Car getNearestBehindCar();
   double getLaneAvgSpeed();
   int getNoAheadCars();
-  int noThreatCars =0;
   vector<Car> getThreatCars();
   double getLaneCost();
   vector<Car> getCars(Car car);
@@ -35,10 +34,17 @@ public:
 
   vector<Car> lane_cars;
 
+  int laneNumber;
+  int numberThreatCars =0;
   int numberAheadCars = 0;
+  int numberBehindCars = 0;
   int numberNearAheadCars = 0;
+  Car nearest_ahead_car;
+  Car nearest_behind_car;
+  int numberTotalCars = 0;
   bool hasThreatCars = false;
   bool hasAheadCar = false;
+  bool hasBehindCar = false;
   bool hasCar = false;
   double laneCost = 99;
 
@@ -51,7 +57,7 @@ public:
   double nearZoneRearLimit = -10;
 
   double nearest_ahead_car_speed = 0;
-    Car nearest_ahead_car;
+
     bool isCurrentLane = false;
 
 

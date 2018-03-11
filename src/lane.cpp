@@ -30,7 +30,7 @@ Lane::~Lane() {
 
 Car Lane::getNearestAheadCar(){
 
-//  Car nearest_car;
+  //  Car nearest_car;
   int nearest_s = 99999;
   for (int i = 0; i < this->lane_cars.size(); i++){
     if (this->lane_cars[i].car_delta_s > 0 ) {
@@ -38,7 +38,7 @@ Car Lane::getNearestAheadCar(){
       if (this->lane_cars[i].car_delta_s < nearest_s) {
         nearest_s = this->lane_cars[i].car_delta_s;
         nearest_ahead_car = this->lane_cars[i];
-        this->nearest_ahead_car_speed = nearest_ahead_car.car_speed;
+//        this->nearest_ahead_car_speed = nearest_ahead_car.car_speed;
       }
     }
   }
@@ -48,32 +48,42 @@ Car Lane::getNearestAheadCar(){
 
 Car Lane::getNearestBehindCar(){
 
-  Car nearest;
+//  Car nearest;
   int nearest_s = 99999;
   for (int i = 0; i < this->lane_cars.size(); i++){
     if (this->lane_cars[i].car_delta_s < 0 ) {
-      if (this->lane_cars[i].car_delta_s > nearest_s) {
+      if (abs(this->lane_cars[i].car_delta_s) < nearest_s) {
         nearest_s = this->lane_cars[i].car_delta_s;
-        nearest = this->lane_cars[i];
+        nearest_behind_car = this->lane_cars[i];
+//        nearest = this->lane_cars[i];
       }
     }
   }
 
-  return nearest;
+  return nearest_behind_car;
 }
 
 void Lane::addCar(Car car) {
   //cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\tadd_car"<<endl;
 
   lane_cars.push_back(car);
+  this->numberTotalCars++;
 
   bool hasCar = true;
+
+
   if (car.car_delta_s > 0 ) {
     //    cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\tahead_car"<<endl;
     this->hasAheadCar = true;
     this->numberAheadCars++;
-    this->numberNearAheadCars++;
+//    this->numberNearAheadCars++;
+
   }
+  else {
+    this->hasBehindCar = true;
+    this->numberBehindCars++;
+  }
+
 }
 
 
@@ -107,7 +117,7 @@ vector<Car> Lane::getThreatCars() {
       //        nearest_s = this->lane_cars[i].car_delta_s;
       threatCars.push_back(lane_cars[i]);
       hasThreatCars = true;
-      noThreatCars ++;
+      numberThreatCars ++;
     }
   }
   return threatCars;
@@ -117,6 +127,7 @@ void Lane::evaluate(){
   getThreatCars();
   getLaneAvgSpeed();
   getNearestAheadCar();
+  getNearestBehindCar();
   getLaneCost();
   sortByDeltaS();
 }
@@ -134,7 +145,7 @@ double Lane::getLaneCost() {
 
   // safety
   if (hasThreatCars)
-    safe_cost = 1;
+    safe_cost = 2;
   else
     safe_cost = 0;
 
@@ -143,10 +154,10 @@ double Lane::getLaneCost() {
   else
     next_ahead_car_cost =0;
 
-//  if (hasAheadCar)
-//    next_ahead_car_cost = (50-this->ahead_car_speed)/50;
-//  else
-//    next_ahead_car_cost =0;
+  //  if (hasAheadCar)
+  //    next_ahead_car_cost = (50-this->ahead_car_speed)/50;
+  //  else
+  //    next_ahead_car_cost =0;
 
   // TODO consider all ahead cars
   if (hasAheadCar)
@@ -157,7 +168,7 @@ double Lane::getLaneCost() {
 
   not_inside_lane_cost = (NUMBER_OF_LANES - laneNumber-1) / 10;
 
-  cost = safe_cost+ next_ahead_car_cost+ congestion_cost+not_inside_lane_cost + not_inside_lane_cost;
+  cost = safe_cost+ next_ahead_car_cost+ congestion_cost+not_inside_lane_cost;
   this->laneCost = cost;
   return cost;
 
@@ -166,12 +177,12 @@ double Lane::getLaneCost() {
 
 
 void Lane::sortByDeltaS(){
-//  std::sort(lane_cars.begin(), lane_cars.end(), compareCars);
-//  std::sort(cars.begin(), cars.end(), compareCars);
+  //  std::sort(lane_cars.begin(), lane_cars.end(), compareCars);
+  //  std::sort(cars.begin(), cars.end(), compareCars);
 
   std::sort(lane_cars.begin(), lane_cars.end(),
-            [](Car const & a, Car const & b) -> bool
-            { return a.car_delta_s < b.car_delta_s; } );
+      [](Car const & a, Car const & b) -> bool
+      { return a.car_delta_s < b.car_delta_s; } );
 
   string order ="";
   for (int i = 0; i < lane_cars.size(); i++){
@@ -179,14 +190,14 @@ void Lane::sortByDeltaS(){
   }
 
   //TODO delete cout
-  cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\tOrder:"<<order<< endl;
+//  cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\tOrder:"<<order<< endl;
 
 }
 
 
 int Lane::getNoAheadCars() {
 
-return this->numberAheadCars;
+  return this->numberAheadCars;
 }
 
 // compare the delta s values in the lane to sort by largest s to smallest s
