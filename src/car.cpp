@@ -48,10 +48,14 @@ double Car::getSpeedMph(){
   return this->car_speed*2.24;
 }
 
+
 double Car::get_delta_s(){
   return this->car_delta_s;
 }
 
+//bool Car::isThreat() {
+//
+//}
 //bool Car::operator > (const Car& str) const
 //{
 //    return (car_delta_s > str->delta_s);

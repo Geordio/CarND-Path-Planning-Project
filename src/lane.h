@@ -18,7 +18,7 @@ public:
   Lane();
   virtual ~Lane();
 
-
+  int laneNumber;
   Car getNearestAheadCar();
   Car getNearestBehindCar();
   double getLaneAvgSpeed();
@@ -29,17 +29,44 @@ public:
   vector<Car> getCars(Car car);
   void addCar(Car car);
 
+  int NUMBER_OF_LANES = 3;
+
   void evaluate();
 
   vector<Car> lane_cars;
 
+  int numberAheadCars = 0;
+  int numberNearAheadCars = 0;
   bool hasThreatCars = false;
   bool hasAheadCar = false;
   bool hasCar = false;
-  double threatZoneFrontLimit = 10;
-  double threatZoneRearLimit = -30;
-  double ahead_car_speed = 0;
+  double laneCost = 99;
 
+  // threat zone definitions.
+  double threatZoneFrontLimit = 5;
+  double threatZoneRearLimit = -25;
+
+  // threat zone definitions.
+  double nearZoneFrontLimit = 40;
+  double nearZoneRearLimit = -10;
+
+  double nearest_ahead_car_speed = 0;
+    Car nearest_ahead_car;
+    bool isCurrentLane = false;
+
+
+  void sortByDeltaS();
+//  static struct lane_delta_s_comparer;
+
+//  static struct lane_delta_s_comparer{
+//    bool operator()(const Car& lhs, const Car& rhs);
+//  };
+//  bool compareCars(const Car* lhs, const Car* rhs);
+
+//  }
 };
 
+//static struct lane_delta_s_comparer{
+//  bool operator()(const Car& lhs, const Car& rhs);
+//};
 #endif /* LANE_H_ */

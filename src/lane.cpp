@@ -10,6 +10,8 @@
 #include "car.h"
 #include <vector>
 #include <iostream>
+#include <algorithm>
+
 
 using namespace std;
 
@@ -28,20 +30,20 @@ Lane::~Lane() {
 
 Car Lane::getNearestAheadCar(){
 
-  Car nearest;
+//  Car nearest_car;
   int nearest_s = 99999;
   for (int i = 0; i < this->lane_cars.size(); i++){
     if (this->lane_cars[i].car_delta_s > 0 ) {
       //      hasAheadCar=true;
       if (this->lane_cars[i].car_delta_s < nearest_s) {
         nearest_s = this->lane_cars[i].car_delta_s;
-        nearest = this->lane_cars[i];
-        this->ahead_car_speed = nearest.car_speed;
+        nearest_ahead_car = this->lane_cars[i];
+        this->nearest_ahead_car_speed = nearest_ahead_car.car_speed;
       }
     }
   }
 
-  return nearest;
+  return nearest_ahead_car;
 }
 
 Car Lane::getNearestBehindCar(){
@@ -69,10 +71,14 @@ void Lane::addCar(Car car) {
   if (car.car_delta_s > 0 ) {
     //    cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\tahead_car"<<endl;
     this->hasAheadCar = true;
+    this->numberAheadCars++;
+    this->numberNearAheadCars++;
   }
 }
 
 
+
+// calculate and return the average speed of the other cars in the lane
 double Lane::getLaneAvgSpeed(){
   double total_speed = 0;
 
@@ -92,6 +98,10 @@ vector<Car> Lane::getThreatCars() {
 
   vector<Car> threatCars;
   //  int nearest_s = 99999;
+
+  // iterate through the cars in the lane and identify is they are deemed a threat (i.e they are in vicinty
+  // do this by checking if it is within a range
+  // Note that this is based on the target cars current location, not their predicted one.
   for (int i = 0; i < this->lane_cars.size(); i++){
     if ((this->lane_cars[i].car_delta_s > threatZoneRearLimit ) && (this->lane_cars[i].car_delta_s < threatZoneFrontLimit )) {
       //        nearest_s = this->lane_cars[i].car_delta_s;
@@ -107,14 +117,18 @@ void Lane::evaluate(){
   getThreatCars();
   getLaneAvgSpeed();
   getNearestAheadCar();
+  getLaneCost();
+  sortByDeltaS();
 }
 
-
+//TODO add ahead lane congestion
 double Lane::getLaneCost() {
   double cost = 0;
   double safe_cost = 0;
   double congestion_cost = 0;
   double ahead_speed_cost = 0;
+  double next_ahead_car_cost = 0;
+  double not_inside_lane_cost = 0;
 
   getThreatCars();
 
@@ -125,18 +139,79 @@ double Lane::getLaneCost() {
     safe_cost = 0;
 
   if (hasAheadCar)
-    congestion_cost = (50-this->ahead_car_speed)/50;
+    next_ahead_car_cost = (50-this->nearest_ahead_car_speed)/50 + 10/nearest_ahead_car.car_delta_s;
+  else
+    next_ahead_car_cost =0;
+
+//  if (hasAheadCar)
+//    next_ahead_car_cost = (50-this->ahead_car_speed)/50;
+//  else
+//    next_ahead_car_cost =0;
+
+  // TODO consider all ahead cars
+  if (hasAheadCar)
+    congestion_cost = (this->getNoAheadCars())/10;
   else
     congestion_cost =0;
 
 
+  not_inside_lane_cost = (NUMBER_OF_LANES - laneNumber-1) / 10;
 
-
-  cost = safe_cost+ congestion_cost;
-
-
+  cost = safe_cost+ next_ahead_car_cost+ congestion_cost+not_inside_lane_cost + not_inside_lane_cost;
+  this->laneCost = cost;
   return cost;
 
 }
 //vector<Car> getCars();
-//int getNoAheadCars();
+
+
+void Lane::sortByDeltaS(){
+//  std::sort(lane_cars.begin(), lane_cars.end(), compareCars);
+//  std::sort(cars.begin(), cars.end(), compareCars);
+
+  std::sort(lane_cars.begin(), lane_cars.end(),
+            [](Car const & a, Car const & b) -> bool
+            { return a.car_delta_s < b.car_delta_s; } );
+
+  string order ="";
+  for (int i = 0; i < lane_cars.size(); i++){
+    order = order + std::to_string(lane_cars[i].car_delta_s) + ",";
+  }
+
+  //TODO delete cout
+  cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\tOrder:"<<order<< endl;
+
+}
+
+
+int Lane::getNoAheadCars() {
+
+return this->numberAheadCars;
+}
+
+// compare the delta s values in the lane to sort by largest s to smallest s
+// note: s is not absolute here, so can be negative.
+// hence does not sort in distance to the car
+//struct Lane::lane_delta_s_comparer
+//{
+//  bool operator()(const Car& lhs, const Car& rhs)
+//  {
+//    return lhs.car_delta_s > rhs.car_delta_s;
+//  }
+//};
+
+//struct lane_delta_s_comparer
+//{
+//  bool operator()(const Car& lhs, const Car& rhs)
+//  {
+//    return lhs.car_delta_s > rhs.car_delta_s;
+//  }
+//};
+
+//static bool compareCars(const Car* lhs, const Car* rhs){
+//    return lhs->getPassengers() < rhs->getPassengers();
+//}
+
+/*...*/
+
+//std::sort(cars.begin(), cars.end(), compareCars);

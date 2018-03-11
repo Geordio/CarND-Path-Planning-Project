@@ -94,14 +94,16 @@ int labelLane1x = data1x;
 int labelLane2x = data2x;
 
 int labelTrafCoordsx = 2;
-int labelCars_0y = 20;
+// Cars group heading
+int labelCars_0y = 24;
 int labelCar0_0y = labelCars_0y +1;
-int labelCar0_1y = labelCar0_0y +2;
-int labelCar0_2y = labelCar0_0y +3;
-int labelCar0_3y = labelCar0_0y +4;
-int labelCar0_4y = labelCar0_0y +5;
-int labelCar0_5y = labelCar0_0y +6;
-int labelCar0_6y = labelCar0_0y +7;
+int labelCar0_1y = labelCars_0y +2;
+int labelCar0_2y = labelCars_0y +3;
+int labelCar0_3y = labelCars_0y +4;
+int labelCar0_4y = labelCars_0y +5;
+int labelCar0_5y = labelCars_0y +6;
+int labelCar0_6y = labelCars_0y +7;
+int labelCar0_7y = labelCars_0y +8;
 
 int labelCarOffsety = 7;
 //int
@@ -141,16 +143,16 @@ int getBestLane(Lane lane0, Lane lane1, Lane lane2){
   else
     bestLane = lane_num2;
 
-
-
-
 }
+
 
 int getNextLane (Lane lane0, Lane lane1, Lane lane2, int currentLane){
 
   int nextLane = 1;
 
   int bestLane = getBestLane(lane0, lane1, lane2);
+  //TODO delete cout
+
   cout << "______________________________________________________" << bestLane << endl;
   cout << "______________________________________________________" << currentLane << endl;
 
@@ -353,6 +355,27 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 int count_of_msgs = 0;
 
 
+// Sort the Lanes by their cost
+int SortLanesByCost(Lane lane0, Lane lane1, Lane lane2){
+  int bestLane=99;
+
+  vector<Lane> lanes;
+  lanes.push_back(lane0);
+  lanes.push_back(lane1);
+  lanes.push_back(lane2);
+
+
+  std::sort(lanes.begin(), lanes.end(),
+            [](Lane const & a, Lane const & b) -> bool
+            { return a.laneCost < b.laneCost; } );
+
+  bestLane = lanes[0].laneNumber;
+  //TODO delete cout
+  cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tbestLane: " << bestLane<<endl;
+  return bestLane;
+}
+
+
 void OutputLabels() {
   cout << "\033[2J\033[1;1H";
   OutputData(labelLeftx, labelCarSummary, "CAR SUMMARY: ");
@@ -378,10 +401,13 @@ void OutputLabels() {
   OutputData(labelLeftx, labelLaneNxtVehSpdy, "Next Veh Spd: ");
   OutputData(labelLeftx, labelLaneNxtSy, "Next Veh S: ");
   OutputData(labelLeftx, labelLaneThreaty, "No Threat Veh: ");
+
+
   OutputData(labelLeftx, labelCars_0y, "CARS: ");
+
   for (int i = 0; i < 6; i++) {
     OutputData(labelTrafCoordsx, labelCar0_0y + i * labelCarOffsety, "veh id: ");
-    OutputData(labelTrafCoordsx, labelCar0_1y + i * labelCarOffsety, "veh  d: ");
+    OutputData(labelTrafCoordsx, labelCar0_1y + i * labelCarOffsety, "veh d: ");
     OutputData(labelTrafCoordsx, labelCar0_2y + i * labelCarOffsety, "veh s: ");
     OutputData(labelTrafCoordsx, labelCar0_3y + i * labelCarOffsety, "veh v: ");
     OutputData(labelTrafCoordsx, labelCar0_4y + i * labelCarOffsety, "veh delta s: ");
@@ -523,10 +549,14 @@ int main() {
           vector<Car> lane0_cars;
           vector<Car> lane1_cars;
           vector<Car> lane2_cars;
+
           Lane lane0;
           Lane lane1;
           Lane lane2;
 
+          lane0.laneNumber = lane_num0;
+          lane1.laneNumber = lane_num1;
+          lane2.laneNumber = lane_num2;
 
           // parse the sensor fusion data and create cars and laes to represent each element
           for (int i = 0;i < sensor_fusion.size();i++) {
@@ -579,11 +609,16 @@ int main() {
           }
 
           // evaluate the lanes
-
           lane0.evaluate();
           lane1.evaluate();
           lane2.evaluate();
 
+
+          target_lane = SortLanesByCost(lane0, lane1, lane2);
+          // TODO this need to be moved into the lanes class
+//          std::sort(lane0_cars.begin(), lane0_cars.end(), lane_delta_s_comparer());
+//          std::sort(lane1_cars.begin(), lane1_cars.end(), lane_delta_s_comparer());
+//          std::sort(lane2_cars.begin(), lane2_cars.end(), lane_delta_s_comparer());
 
           //////////////////////////////////////
           // analsye the current lane
@@ -591,27 +626,30 @@ int main() {
           Lane current_lane_obj;
           int current_lane = getCurrentLane(ego_car_d);
           if (current_lane == 0) {
-            cout << "current lane =0 "<<endl;
+//            cout << "current lane =0 "<<endl;
             current_lane_obj = lane0;
           }
           else if (current_lane == 1) {
-            cout << "current lane =1 "<< endl;
+//            cout << "current lane =1 "<< endl;
             current_lane_obj = lane1;
           }
           else if (current_lane == 2) {
-            cout << "current lane =2 "<< endl;
+//            cout << "current lane =2 "<< endl;
             current_lane_obj = lane2;
           }
           else
-            cout << "unknown "<< endl;
+          {
 
 
+//            cout << "unknown "<< endl;
+
+          }
 
 
 
           ///////////////////////////////////////////////////////////////////////////////////////////////
           // SPEED
-          // check if the ego vehilce is close to the target
+          // check if the ego vehicle is close to the target vehicle
 
           double ego_target_speed = max_speed;
           if (current_lane_obj.hasAheadCar)
@@ -656,46 +694,10 @@ int main() {
           OutputData(data0x, labelEgoTgtvy, std::to_string(ego_target_speed));
           OutputData(data0x, labelEgoReqvy, std::to_string(ego_req_speed));
           OutputData(data0x, labelEgoActvy, std::to_string(ego_car_speed));
-          /////////////////////////////////////
 
 
-          //            if ( (target_car.car_s - ego_car_s) < safety_distance) {
-          //
-          //
-          //              //                ref_vel = 29.5;
-          //              //            too_close = true;
-          //
-          //              //TODO  note that this will oscilate around the set point, so fix it
-          //              // after the ego car has slowed to the targets speed, then we should just follow it, set the ego speed to the target speed
-          //              if (ref_vel > target_car.car_speed ) {
-          //                ref_vel -= 0.224;
-          //                //            ref_vel = lead_veh_speed;
-          //              }
-          //              else if (ref_vel < target_car.car_speed) {
-          //                ref_vel += 0.224;
-          //              }
-          //
-          //            }
-          //            else if (ref_vel < 49.5) {
-          //              ref_vel += 0.224;
-          //            }
-          //          }
-          //          else if (ref_vel < 49.5) {
-          //            ref_vel += 0.224;
-          //          }
 
 
-          std::sort(lane0_cars.begin(), lane0_cars.end(), lane_delta_s_comparer());
-          std::sort(lane1_cars.begin(), lane1_cars.end(), lane_delta_s_comparer());
-          std::sort(lane2_cars.begin(), lane2_cars.end(), lane_delta_s_comparer());
-
-
-          //          cout << "                                                                               lead size: " << lane0.lane_cars.size() << endl;
-          //          if (lane0.lane_cars.size() > 0){
-          //            Car leadCar = lane0.getNearestAheadCar();
-          //
-          ////            cout << "                                                                               lead: " << leadCar.car_id << endl;
-          //          }
 
 
 
@@ -715,9 +717,13 @@ int main() {
           OutputData(data2x, labelLaneThreaty, std::to_string(lane2.noThreatCars));
 
 
-          OutputData(data0x, labelLaneThreaty+1, std::to_string(lane0.getLaneCost()));
-          OutputData(data1x, labelLaneThreaty+1, std::to_string(lane1.getLaneCost()));
-          OutputData(data2x, labelLaneThreaty+1, std::to_string(lane2.getLaneCost()));
+//          OutputData(data0x, labelLaneThreaty+1, std::to_string(lane0.getLaneCost()));
+//          OutputData(data1x, labelLaneThreaty+1, std::to_string(lane1.getLaneCost()));
+//          OutputData(data2x, labelLaneThreaty+1, std::to_string(lane2.getLaneCost()));
+
+          OutputData(data0x, labelLaneThreaty+1, std::to_string(lane0.laneCost));
+          OutputData(data1x, labelLaneThreaty+1, std::to_string(lane1.laneCost));
+          OutputData(data2x, labelLaneThreaty+1, std::to_string(lane2.laneCost));
 
 
           if (debug){
@@ -758,11 +764,11 @@ int main() {
             ptsy.push_back(ref_y);
           }
 
-          lane0.evaluate();
-          lane1.evaluate();
-          lane2.evaluate();
+//          lane0.evaluate();
+//          lane1.evaluate();
+//          lane2.evaluate();
 
-          target_lane = 1;
+//          target_lane = 1;
           // TODO temporary test
           //          if (lane0.noThreatCars == 0){
           //            target_lane = 0;
@@ -817,10 +823,6 @@ int main() {
           double x_add_on = 0;
 
           //          OutputData(data0x, labelNoWayPtsy, std::to_string(previous_path_x.size()));
-
-
-
-
 
           // fill up the rest of the path planner, appending to the original points. Always output 50 points
           for (int i = 1; i <= no_of_pts - previous_path_x.size(); i++) {
