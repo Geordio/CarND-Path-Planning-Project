@@ -30,7 +30,7 @@ double ref_vel = 0; //49.5
 
 
 
-bool debug = false;
+bool debug = true;
 
 int SF_ID_IND = 0;
 const int SF_IND_X = 1;
@@ -59,17 +59,18 @@ int labelLeftx = 0;
 int labelCarSummary = 3;
 int labelEgoCoordidy = labelCarSummary+1;
 int labelEgoCoorddy = labelCarSummary+2;
-int labelEgoCoordsy = labelCarSummary+3;
-int labelEgoVy = labelCarSummary+4;
-int labelEgoCoordxy = labelCarSummary+5;
-int labelEgoCoordyy = labelCarSummary+6;
-int labelEgoMaxvy = labelCarSummary+7;
-int labelEgoTgtvy = labelCarSummary+8;
-int labelEgoReqvy = labelCarSummary+9;
-int labelEgoActvy = labelCarSummary+10;
+int labelEgoActsy = labelCarSummary+3;
+int labelEgoPthEndsy = labelCarSummary+4;
+int labelEgoVy = labelCarSummary+5;
+int labelEgoCoordxy = labelCarSummary+6;
+int labelEgoCoordyy = labelCarSummary+7;
+int labelEgoMaxvy = labelCarSummary+8;
+int labelEgoTgtvy = labelCarSummary+9;
+int labelEgoReqvy = labelCarSummary+10;
+int labelEgoActvy = labelCarSummary+11;
 
 
-int labelNoWayPtsy = labelCarSummary+10;
+int labelNoWayPtsy = labelCarSummary+12;
 
 const double max_speed = 49.5;
 double ego_req_speed = 0;
@@ -391,7 +392,8 @@ void OutputLabels() {
   // EGO vehicle labels
   OutputData(labelLeftx, labelEgoCoordidy, "Veh id: ");
   OutputData(labelLeftx, labelEgoCoorddy, "Veh d: ");
-  OutputData(labelLeftx, labelEgoCoordsy, "Veh s: ");
+  OutputData(labelLeftx, labelEgoActsy, "Veh s: ");
+  OutputData(labelLeftx, labelEgoPthEndsy, "Veh Path s: ");
   OutputData(labelLeftx, labelEgoVy, "Veh v: ");
   OutputData(labelLeftx, labelEgoCoordxy, "Veh x: ");
   OutputData(labelLeftx, labelEgoCoordyy, "Veh y: ");
@@ -527,27 +529,39 @@ int main() {
           // Main car's localization Data
           double ego_car_x = j[1]["x"];
           double ego_car_y = j[1]["y"];
-          double ego_car_s = j[1]["s"];
+          double ego_car_actual_s = j[1]["s"];
           double ego_car_d = j[1]["d"];
           double ego_car_yaw = j[1]["yaw"];
           double ego_car_speed = j[1]["speed"];
+
           // Previous path data given to the Planner
           auto previous_path_x = j[1]["previous_path_x"];
           auto previous_path_y = j[1]["previous_path_y"];
+
           // Previous path's end s and d values
           double end_path_s = j[1]["end_path_s"];
           double end_path_d = j[1]["end_path_d"];
+
           // Sensor Fusion Data, a list of all other cars on the same side of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
           json msgJson;
-          //          vector<double> next_x_vals;
-          //          vector<double> next_y_vals;
+
           int prev_size = previous_path_x.size();
+
+//          double ego_car_actual_s = ego_car_s;
           // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
           // added based on walk through
-          if (prev_size > 0) {
-            ego_car_s = end_path_s;
+          // TODO. This is why the ego car position is based on the end of the path!!!! NEEED TO SORT!!
+          if (prev_size == 0)
+//          {
+//            ego_car_s = end_path_s;
+//          }
+//          else
+          {
+            end_path_s = ego_car_actual_s;
+//            ego_car_s = ego_car_actual_s;
           }
+
           bool too_close = false;
           // TODO make constants at the start
           //          [ id, x, y, vx, vy, s, d]
@@ -584,9 +598,12 @@ int main() {
 
             // calculate so additional data items
             double sensed_car_v = sqrt(sensed_car_vx * sensed_car_vx + sensed_car_vy * sensed_car_vy);
-            double delta_s = sensed_car_s - ego_car_s;
+            double delta_s = sensed_car_s - ego_car_actual_s;
             double projected_s = sensed_car_s + ((double)((prev_size)) * 0.02 * sensed_car_v);
-            double projected_delta_s = sensed_car_s - projected_s;
+
+            //calculate the projected delta s
+            // should this be form the ego_car_s or the projected_ego_car_s?
+            double projected_delta_s =  projected_s - end_path_s;
 
             Car this_car = Car(sensed_car_id, sensed_car_s, sensed_car_d, sensed_car_v, delta_s, projected_s, projected_delta_s);
             //lane 0
@@ -679,8 +696,8 @@ int main() {
 
             //            double ego_req_speed = ego_target_speed;
 
-
-            if ( (target_car.car_s - ego_car_s) < safety_distance) {
+//TODO sort
+            if ( (target_car.car_projected_delta_s) < safety_distance) {
               //              if (target_car.car_speed< max_speed){
               ego_target_speed = target_car.car_speed;
               //              }
@@ -715,8 +732,10 @@ int main() {
 
           OutputData(data0x, labelEgoCoordxy, std::to_string(ego_car_x));
           OutputData(data0x, labelEgoCoordyy, std::to_string(ego_car_y));
-          OutputData(data0x, labelEgoCoordsy, std::to_string(ego_car_s));
+          OutputData(data0x, labelEgoActsy, std::to_string(ego_car_actual_s));
+          OutputData(data0x, labelEgoPthEndsy, std::to_string(end_path_s));
           OutputData(data0x, labelEgoCoorddy, std::to_string(ego_car_d));
+
           OutputData(data0x, labelLaneCnty, std::to_string(lane0.numberTotalCars));
           OutputData(data1x, labelLaneCnty, std::to_string(lane1.numberTotalCars));
           OutputData(data2x, labelLaneCnty, std::to_string(lane2.numberTotalCars));
@@ -730,17 +749,17 @@ int main() {
           OutputData(data1x, labelLaneAhdVehSpdy, std::to_string(lane1.nearest_ahead_car.car_speed));
           OutputData(data2x, labelLaneAhdVehSpdy, std::to_string(lane2.nearest_ahead_car.car_speed));
 
-          OutputData(data0x, labelLaneAhdSy, std::to_string(lane0.nearest_ahead_car.car_delta_s));
-          OutputData(data1x, labelLaneAhdSy, std::to_string(lane1.nearest_ahead_car.car_delta_s));
-          OutputData(data2x, labelLaneAhdSy, std::to_string(lane2.nearest_ahead_car.car_delta_s));
+          OutputData(data0x, labelLaneAhdSy, std::to_string(lane0.nearest_ahead_car.car_projected_delta_s));
+          OutputData(data1x, labelLaneAhdSy, std::to_string(lane1.nearest_ahead_car.car_projected_delta_s));
+          OutputData(data2x, labelLaneAhdSy, std::to_string(lane2.nearest_ahead_car.car_projected_delta_s));
 
           OutputData(data0x, labelLaneBhdVehSpdy, std::to_string(lane0.nearest_ahead_car.car_speed));
           OutputData(data1x, labelLaneBhdVehSpdy, std::to_string(lane1.nearest_ahead_car.car_speed));
           OutputData(data2x, labelLaneBhdVehSpdy, std::to_string(lane2.nearest_ahead_car.car_speed));
 
-          OutputData(data0x, labelLaneBhdSy, std::to_string(lane0.nearest_ahead_car.car_delta_s));
-          OutputData(data1x, labelLaneBhdSy, std::to_string(lane1.nearest_ahead_car.car_delta_s));
-          OutputData(data2x, labelLaneBhdSy, std::to_string(lane2.nearest_ahead_car.car_delta_s));
+          OutputData(data0x, labelLaneBhdSy, std::to_string(lane0.nearest_ahead_car.car_projected_delta_s));
+          OutputData(data1x, labelLaneBhdSy, std::to_string(lane1.nearest_ahead_car.car_projected_delta_s));
+          OutputData(data2x, labelLaneBhdSy, std::to_string(lane2.nearest_ahead_car.car_projected_delta_s));
 
 
           OutputData(data0x, labelLaneThreaty, std::to_string(lane0.numberThreatCars));
@@ -758,15 +777,15 @@ int main() {
 
 
           if (debug){
-            output_traffic_debug(lane0_cars, data0x);
-            output_traffic_debug(lane1_cars, data1x);
-            output_traffic_debug(lane2_cars, data2x);
+            output_traffic_debug(lane0.lane_cars, data0x);
+            output_traffic_debug(lane1.lane_cars, data1x);
+            output_traffic_debug(lane2.lane_cars, data2x);
           }
 
-          if (prev_size > 0) {
-
-            ego_car_s = end_path_s;
-          }
+//          if (prev_size > 0) {
+//
+//            ego_car_s = end_path_s;
+//          }
           vector<double> ptsx;
           vector<double> ptsy;
           double ref_x = ego_car_x;
@@ -809,9 +828,9 @@ int main() {
 
 
           int target_s = 30;
-          vector<double> next_wp0 = getXY(ego_car_s + target_s, (2+4*target_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          vector<double> next_wp1 = getXY(ego_car_s + target_s *2 , (2+4*target_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          vector<double> next_wp2 = getXY(ego_car_s + target_s *3, (2+4*target_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector<double> next_wp0 = getXY(end_path_s + target_s, (2+4*target_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector<double> next_wp1 = getXY(end_path_s + target_s *2 , (2+4*target_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector<double> next_wp2 = getXY(end_path_s + target_s *3, (2+4*target_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
 
           ptsx.push_back(next_wp0[0]);
           ptsx.push_back(next_wp1[0]);
@@ -929,7 +948,7 @@ int main() {
     //    OutputData(labelEgoCoordx, labelEgoCoordy,"EgoVehicle x");
     //    OutputData(labelEgoCoordx, labelEgoCoordy+1,"EgoVehicle y");
     //    OutputData(labelEgoCoorddx, labelEgoCoorddy,"EgoVehicle d");
-    //    OutputData(labelEgoCoordsx, labelEgoCoordsy,"EgoVehicle s");
+    //    OutputData(labelEgoCoordsx, labelEgoActsy,"EgoVehicle s");
   });
 
   h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code,

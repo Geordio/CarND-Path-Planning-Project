@@ -33,10 +33,10 @@ Car Lane::getNearestAheadCar(){
   //  Car nearest_car;
   int nearest_s = 99999;
   for (int i = 0; i < this->lane_cars.size(); i++){
-    if (this->lane_cars[i].car_delta_s > 0 ) {
+    if (this->lane_cars[i].car_projected_delta_s > 0 ) {
       //      hasAheadCar=true;
-      if (this->lane_cars[i].car_delta_s < nearest_s) {
-        nearest_s = this->lane_cars[i].car_delta_s;
+      if (this->lane_cars[i].car_projected_delta_s < nearest_s) {
+        nearest_s = this->lane_cars[i].car_projected_delta_s;
         nearest_ahead_car = this->lane_cars[i];
 //        this->nearest_ahead_car_speed = nearest_ahead_car.car_speed;
       }
@@ -51,9 +51,9 @@ Car Lane::getNearestBehindCar(){
 //  Car nearest;
   int nearest_s = 99999;
   for (int i = 0; i < this->lane_cars.size(); i++){
-    if (this->lane_cars[i].car_delta_s < 0 ) {
-      if (abs(this->lane_cars[i].car_delta_s) < nearest_s) {
-        nearest_s = this->lane_cars[i].car_delta_s;
+    if (this->lane_cars[i].car_projected_delta_s < 0 ) {
+      if (abs(this->lane_cars[i].car_projected_delta_s) < nearest_s) {
+        nearest_s = this->lane_cars[i].car_projected_delta_s;
         nearest_behind_car = this->lane_cars[i];
 //        nearest = this->lane_cars[i];
       }
@@ -63,6 +63,9 @@ Car Lane::getNearestBehindCar(){
   return nearest_behind_car;
 }
 
+
+// Add a car to the vector of cars in the lane
+// increment the counts for total, ahead and behind cars
 void Lane::addCar(Car car) {
   //cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\tadd_car"<<endl;
 
@@ -72,7 +75,7 @@ void Lane::addCar(Car car) {
   bool hasCar = true;
 
 
-  if (car.car_delta_s > 0 ) {
+  if (car.car_projected_delta_s > 0 ) {
     //    cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\tahead_car"<<endl;
     this->hasAheadCar = true;
     this->numberAheadCars++;
@@ -104,6 +107,9 @@ double Lane::getLaneAvgSpeed(){
 //
 //}
 
+
+// Calculate if any of the cars in the lane should be consider a threat
+// EG have a trajectory that makes them a risk to the EGO car
 vector<Car> Lane::getThreatCars() {
 
   vector<Car> threatCars;
@@ -111,14 +117,21 @@ vector<Car> Lane::getThreatCars() {
 
   // iterate through the cars in the lane and identify is they are deemed a threat (i.e they are in vicinty
   // do this by checking if it is within a range
-  // Note that this is based on the target cars current location, not their predicted one.
+  // TODO:Note that this is based on the target cars current location, not their predicted one.
+  // TODO handle the scenario where a car behind us is travelling so fast that its trajectory would take it through and out the threat area
   for (int i = 0; i < this->lane_cars.size(); i++){
-    if ((this->lane_cars[i].car_delta_s > threatZoneRearLimit ) && (this->lane_cars[i].car_delta_s < threatZoneFrontLimit )) {
+
+    if ((this->lane_cars[i].car_projected_delta_s > threatZoneRearLimit ) && (this->lane_cars[i].car_projected_delta_s < threatZoneFrontLimit )) {
       //        nearest_s = this->lane_cars[i].car_delta_s;
       threatCars.push_back(lane_cars[i]);
       hasThreatCars = true;
-      numberThreatCars ++;
+      numberThreatCars++;
     }
+
+//    else if (this->lane_cars[i].car_projected_delta_s < 0) {
+//      // if the car is behind
+//      if (this->lane_cars[i])
+//    }
   }
   return threatCars;
 }
@@ -141,7 +154,7 @@ double Lane::getLaneCost() {
   double next_ahead_car_cost = 0;
   double not_inside_lane_cost = 0;
 
-  getThreatCars();
+//  getThreatCars();
 
   // safety
   if (hasThreatCars)
@@ -150,7 +163,7 @@ double Lane::getLaneCost() {
     safe_cost = 0;
 
   if (hasAheadCar)
-    next_ahead_car_cost = (50-this->nearest_ahead_car_speed)/50 + 10/nearest_ahead_car.car_delta_s;
+    next_ahead_car_cost = (50-this->nearest_ahead_car_speed)/50 + 10/nearest_ahead_car.car_projected_delta_s;
   else
     next_ahead_car_cost =0;
 
@@ -194,6 +207,23 @@ void Lane::sortByDeltaS(){
 
 }
 
+void Lane::sortByProjectedDeltaS(){
+  //  std::sort(lane_cars.begin(), lane_cars.end(), compareCars);
+  //  std::sort(cars.begin(), cars.end(), compareCars);
+
+  std::sort(lane_cars.begin(), lane_cars.end(),
+      [](Car const & a, Car const & b) -> bool
+      { return a.car_projected_delta_s < b.car_projected_delta_s; } );
+
+  string order ="";
+  for (int i = 0; i < lane_cars.size(); i++){
+    order = order + std::to_string(lane_cars[i].car_projected_delta_s) + ",";
+  }
+
+  //TODO delete cout
+//  cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\tOrder:"<<order<< endl;
+
+}
 
 int Lane::getNoAheadCars() {
 

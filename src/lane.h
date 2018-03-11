@@ -49,12 +49,12 @@ public:
   double laneCost = 99;
 
   // threat zone definitions.
-  double threatZoneFrontLimit = 5;
-  double threatZoneRearLimit = -25;
+  double threatZoneFrontLimit = 10;
+  double threatZoneRearLimit = -10;
 
   // threat zone definitions.
-  double nearZoneFrontLimit = 40;
-  double nearZoneRearLimit = -10;
+  double nearZoneFrontLimit = 30;
+  double nearZoneRearLimit = -30;
 
   double nearest_ahead_car_speed = 0;
 
@@ -62,6 +62,7 @@ public:
 
 
   void sortByDeltaS();
+  void sortByProjectedDeltaS();
 //  static struct lane_delta_s_comparer;
 
 //  static struct lane_delta_s_comparer{
