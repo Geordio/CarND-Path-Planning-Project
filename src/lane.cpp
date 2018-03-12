@@ -128,10 +128,13 @@ vector<Car> Lane::getThreatCars() {
       numberThreatCars++;
     }
 
-//    else if (this->lane_cars[i].car_projected_delta_s < 0) {
-//      // if the car is behind
-//      if (this->lane_cars[i])
-//    }
+
+    else if (this->lane_cars[i].car_projected_delta_s < 0) {
+      // if the car is behind, but its projected speed will take it outside of the threat zone
+      if (this->lane_cars[i].car_delta_s <threatZoneRearLimit && this->lane_cars[i].car_projected_delta_s > threatZoneFrontLimit)
+        hasThreatCars = true;
+        numberThreatCars++;
+    }
   }
   return threatCars;
 }
