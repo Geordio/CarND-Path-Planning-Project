@@ -11,7 +11,9 @@
 #include <vector>
 #include "car.h"
 
-using namespace std;
+#include <string>
+
+//using namespace std;
 
 class Lane {
 public:
@@ -19,34 +21,50 @@ public:
   virtual ~Lane();
 
 
+  Car calcNearestAheadCar();
+  Car calcNearestProjectedAheadCar();
+  Car getNearestProjectedAheadCar();
   Car getNearestAheadCar();
+  Car calcNearestProjectedBehindCar();
+  Car getNearestProjectedBehindCar();
+  Car calcNearestBehindCar();
   Car getNearestBehindCar();
   double getLaneAvgSpeed();
   int getNoAheadCars();
-  vector<Car> getThreatCars();
-  double getLaneCost();
-  vector<Car> getCars(Car car);
+  std::vector<Car> getThreatCars();
+  double getLaneSafetyCost();
+  double getLaneEfficencyCost();
+  std::vector<Car> getCars(Car car);
   void addCar(Car car);
-
+  std::string getNearestProjectedAheadCarSpeedTxt();
+  std::string getNearestProjectedAheadCarSTxt();
+  std::string getNearestProjectedAheadCarDeltaSTxt();
   int NUMBER_OF_LANES = 3;
 
   void evaluate();
 
-  vector<Car> lane_cars;
+  std::vector<Car> lane_cars;
 
   int laneNumber;
-  int numberThreatCars =0;
+  int numberThreatCars = 0;
   int numberAheadCars = 0;
   int numberBehindCars = 0;
   int numberNearAheadCars = 0;
   Car nearest_ahead_car;
+  Car nearest_projected_ahead_car;
   Car nearest_behind_car;
+  Car nearest_projected_behind_car;
   int numberTotalCars = 0;
+
   bool hasThreatCars = false;
   bool hasAheadCar = false;
   bool hasBehindCar = false;
+  bool hasProjectedAheadCar = false;
+  bool hasProjectedBehindCar = false;
   bool hasCar = false;
-  double laneCost = 99;
+
+  double laneSafetyCost = 99;
+  double laneEfficencyCost = 99;
 
   // threat zone definitions.
   double threatZoneFrontLimit = 10;

@@ -14,28 +14,28 @@ Car::Car() {
 
 Car::Car(int id, double s, double d, double speed, double delta_s) {
   // TODO Auto-generated constructor stub
-  this->car_id = id;
+  this->id = id;
   //  this->car_x= x;
   //  this->car_y=y;
-  this-> car_d=d;
-  this-> car_s=s;
-  this->car_speed=speed;
-  this->car_delta_s = delta_s;
+  this-> d=d;
+  this-> s=s;
+  this->speed=speed;
+  this->delta_s = delta_s;
   //  double car_yaw;
   //  double car_speed;
 }
 
-Car::Car(int id, double s, double d, double speed, double delta_s, double projected_s,double projected_delta_s) {
+Car::Car(int _id, double _s, double _d, double _speed, double _delta_s, double _projected_s,double _projected_delta_s) {
   // TODO Auto-generated constructor stub
-  this->car_id = id;
+  this->id = _id;
   //  this->car_x= x;
   //  this->car_y=y;
-  this-> car_d=d;
-  this-> car_s=s;
-  this->car_speed=speed;
-  this->car_delta_s = delta_s;
-  this->car_projected_s = projected_s;
-  this->car_projected_delta_s = projected_delta_s;
+  this->d=_d;
+  this->s=_s;
+  this->speed=_speed;
+  this->delta_s = _delta_s;
+  this->projected_s = _projected_s;
+  this->projected_delta_s = _projected_delta_s;
   //  double car_yaw;
   //  double car_speed;
 }
@@ -45,12 +45,12 @@ Car::~Car() {
 }
 
 double Car::getSpeedMph(){
-  return this->car_speed*2.24;
+  return this->speed*2.24;
 }
 
 
 double Car::get_delta_s(){
-  return this->car_delta_s;
+  return this->delta_s;
 }
 
 //bool Car::isThreat() {

@@ -14,6 +14,7 @@
 #include <term.h>
 #include "car.h"
 #include "lane.h"
+#include "output.h"
 
 using namespace std;
 
@@ -25,14 +26,15 @@ constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
-int target_lane = 1;
+int efficent_lane = 1;
 double ref_vel = 0; //49.5
 
+const double max_speed = 49.5;
+double ego_req_speed = 0;
+int next_lane = 1;
+//bool debug = true;
 
-
-bool debug = true;
-
-int SF_ID_IND = 0;
+const int SF_ID_IND = 0;
 const int SF_IND_X = 1;
 const int SF_IND_Y = 2;
 const int SF_VX_IND = 3;
@@ -45,75 +47,83 @@ const int lane_num0 = 0;
 const int lane_num1 = 1;
 const int lane_num2 = 2;
 
-const int data0x = 22;
-const int data1x = 62;
-const int data2x = 102;
-const int data3x = 142;
+const int StayInLane = 0;
+const int LaneChange = 1;
+int STATE = StayInLane;
 
-const int labelcol1 = 42;
-const int labelcol2 = 82;
-const int labelcol3 = 122;
+int centre_d_l = 0;
+int centre_d_r = 0;
+
+
+//const int data0x = 22;
+//const int data1x = 62;
+//const int data2x = 102;
+//const int data3x = 142;
+
+//const int labelcol1 = 42;
+//const int labelcol2 = 82;
+//const int labelcol3 = 122;
 
 //const int labelEgoCoord[2] = {col0, ;
-int labelLeftx = 0;
-int labelCarSummary = 3;
-int labelEgoCoordidy = labelCarSummary+1;
-int labelEgoCoorddy = labelCarSummary+2;
-int labelEgoActsy = labelCarSummary+3;
-int labelEgoPthEndsy = labelCarSummary+4;
-int labelEgoVy = labelCarSummary+5;
-int labelEgoCoordxy = labelCarSummary+6;
-int labelEgoCoordyy = labelCarSummary+7;
-int labelEgoMaxvy = labelCarSummary+8;
-int labelEgoTgtvy = labelCarSummary+9;
-int labelEgoReqvy = labelCarSummary+10;
-int labelEgoActvy = labelCarSummary+11;
+//int labelLeftx = 0;
+//int labelCarSummary = 3;
+//int labelEgoCoordidy = labelCarSummary+1;
+//int labelEgoCoorddy = labelCarSummary+2;
+//int labelEgoActsy = labelCarSummary+3;
+//int labelEgoPthEndsy = labelCarSummary+4;
+//int labelEgoVy = labelCarSummary+5;
+//int labelEgoCoordxy = labelCarSummary+6;
+//int labelEgoCoordyy = labelCarSummary+7;
+//int labelEgoMaxvy = labelCarSummary+8;
+//int labelEgoTgtvy = labelCarSummary+9;
+//int labelEgoReqvy = labelCarSummary+10;
+//int labelEgoActvy = labelCarSummary+11;
+//
+//
+//int labelNoWayPtsy = labelCarSummary+12;
+//
+//
+////int labelBestLane = 9;
+//
+////int labelEgoCoordsy = 3;
+////int labelEgoVx = 0;
+//
+//
+//int labelEgoStatey = 0;
+//
+//int labelLaneTitley =17;
+//int labelLaneCnty =labelLaneTitley+1;
+//int labelLaneAhdCnty =labelLaneTitley+2;
+//int labelLaneAhdVehSpdy = labelLaneTitley+3;
+//int labelLaneAhdSy = labelLaneTitley+4;
+//int labelLaneBhdVehSpdy = labelLaneTitley+5;
+//int labelLaneBhdSy = labelLaneTitley+6;
+//int labelLaneThreaty = labelLaneTitley+7;
+//int labelLaneCosty = labelLaneTitley+8;
+//
+//
+////int labelLane0x = 0;
 
-
-int labelNoWayPtsy = labelCarSummary+12;
-
-const double max_speed = 49.5;
-double ego_req_speed = 0;
-//int labelBestLane = 9;
-
-//int labelEgoCoordsy = 3;
-//int labelEgoVx = 0;
-
-
-int labelEgoStatey = 0;
-
-int labelLaneTitley =17;
-int labelLaneCnty =labelLaneTitley+1;
-int labelLaneAhdCnty =labelLaneTitley+2;
-int labelLaneAhdVehSpdy = labelLaneTitley+3;
-int labelLaneAhdSy = labelLaneTitley+4;
-int labelLaneBhdVehSpdy = labelLaneTitley+5;
-int labelLaneBhdSy = labelLaneTitley+6;
-int labelLaneThreaty = labelLaneTitley+7;
-int labelLaneCosty = labelLaneTitley+8;
-
-
-//int labelLane0x = 0;
-int labelLane0x = data0x;
-int labelLane1x = data1x;
-int labelLane2x = data2x;
-
-int labelTrafCoordsx = 2;
-// Cars group heading
-int labelCars_0y = 28;
-int labelCar0_0y = labelCars_0y +1;
-int labelCar0_1y = labelCars_0y +2;
-int labelCar0_2y = labelCars_0y +3;
-int labelCar0_3y = labelCars_0y +4;
-int labelCar0_4y = labelCars_0y +5;
-int labelCar0_5y = labelCars_0y +6;
-int labelCar0_6y = labelCars_0y +7;
-int labelCar0_7y = labelCars_0y +8;
-
-int labelCarOffsety = 7;
+//
+//int labelTrafCoordsx = 2;
+//// Cars group heading
+//int labelCars_0y = 28;
+//int labelCar0_0y = labelCars_0y +1;
+//int labelCar0_1y = labelCars_0y +2;
+//int labelCar0_2y = labelCars_0y +3;
+//int labelCar0_3y = labelCars_0y +4;
+//int labelCar0_4y = labelCars_0y +5;
+//int labelCar0_5y = labelCars_0y +6;
+//int labelCar0_6y = labelCars_0y +7;
+//int labelCar0_7y = labelCars_0y +8;
+//
+//int labelCarOffsety = 7;
 //int
 Car car = Car();
 Lane ln;
+//int labelLane0x = data0x;
+//int labelLane1x = data1x;
+//int labelLane2x = data2x;
 
 // compare the delta s values in the lane to sort by largest s to smallest s
 // note: s is not absolute here, so can be negative.
@@ -122,67 +132,66 @@ struct lane_delta_s_comparer
 {
   bool operator()(const Car& lhs, const Car& rhs)
   {
-    return lhs.car_delta_s > rhs.car_delta_s;
+    return lhs.delta_s > rhs.delta_s;
   }
 };
 
 
-int getBestLane(Lane lane0, Lane lane1, Lane lane2){
+//int getBestLane(Lane lane0, Lane lane1, Lane lane2){
+//
+//
+//  int bestLane = 99;
+//
+//
+//  if (lane0.getLaneCost() < lane1.getLaneCost()) {
+//    // lane0 is lower that lane 1
+//    if (lane0.getLaneCost() < lane2.getLaneCost())
+//      // lane 0 is lower that lane 2 => lane 0 is the lowest
+//      bestLane = lane_num0;
+//    else
+//      // lane 2 is lower than lane 0. lane 0 was lower than lane 1 => lane 2 is the lowest
+//      bestLane = lane_num2;
+//  }
+//  else if (lane1.getLaneCost() < lane2.getLaneCost()){
+//    bestLane = lane_num1;
+//  }
+//  else
+//    bestLane = lane_num2;
+//
+//}
 
-
-  int bestLane = 99;
-
-
-  if (lane0.getLaneCost() < lane1.getLaneCost()) {
-    // lane0 is lower that lane 1
-    if (lane0.getLaneCost() < lane2.getLaneCost())
-      // lane 0 is lower that lane 2 => lane 0 is the lowest
-      bestLane = lane_num0;
-    else
-      // lane 2 is lower than lane 0. lane 0 was lower than lane 1 => lane 2 is the lowest
-      bestLane = lane_num2;
-  }
-  else if (lane1.getLaneCost() < lane2.getLaneCost()){
-    bestLane = lane_num1;
-  }
-  else
-    bestLane = lane_num2;
-
-}
-
-
-int getNextLane (Lane lane0, Lane lane1, Lane lane2, int currentLane){
-
-  int nextLane = 1;
-
-  int bestLane = getBestLane(lane0, lane1, lane2);
-  //TODO delete cout
-
-//  cout << "______________________________________________________" << bestLane << endl;
-//  cout << "______________________________________________________" << currentLane << endl;
-
-  //  if (currentLane == bestLane){
-  //    //stay in this lane
-  //    nextLane = currentLane;
-  //  }
-  //  else
-  if (currentLane > bestLane)
-  {
-    // left change lane
-    nextLane = currentLane -1;
-
-  }
-  else if (currentLane < bestLane)
-  {
-    // right change lane
-    nextLane = currentLane +1;
-
-  }
-
-
-  return nextLane;
-
-}
+//
+//int getNextLane (Lane lane0, Lane lane1, Lane lane2, int currentLane){
+//
+//  int nextLane = 1;
+//
+//  int bestLane = getBestLane(lane0, lane1, lane2);
+//  //TODO delete cout
+//
+//  //  cout << "______________________________________________________" << bestLane << endl;
+//  //  cout << "______________________________________________________" << currentLane << endl;
+//
+//  //  if (currentLane == bestLane){
+//  //    //stay in this lane
+//  //    nextLane = currentLane;
+//  //  }
+//  //  else
+//  if (currentLane > bestLane)
+//  {
+//    // left change lane
+//    nextLane = currentLane -1;
+//
+//  }
+//  else if (currentLane < bestLane)
+//  {
+//    // right change lane
+//    nextLane = currentLane +1;
+//
+//  }
+//
+//
+//  return nextLane;
+//}
 
 int getCurrentLaneNumber(double d){
   int thelane;
@@ -207,33 +216,33 @@ Lane getCurrentLane(double d, Lane lane0, Lane lane1, Lane lane2 ){
   if (current_lane_number == 0) {
     currentlane = lane0;
   } else
-  if (current_lane_number == 1) {
-    currentlane = lane1;
-  } else
-  if (current_lane_number == 2) {
-    currentlane = lane2;
-  } else {
-  }
+    if (current_lane_number == 1) {
+      currentlane = lane1;
+    } else
+      if (current_lane_number == 2) {
+        currentlane = lane2;
+      } else {
+      }
 
   return currentlane;
 }
 
 
 
-void SetCursorPos(int XPos, int YPos)
-{
-  printf("\033[%d;%dH", YPos+1, XPos+1);
-  // printf("test");
-  // printf("\033[%d;%dH", 10, 10);
-  // cout<< "test2";
-}
-
-void OutputData(int XPos, int YPos, string text)
-{
-
-  SetCursorPos( XPos, YPos);
-  cout<< text<< std::flush;
-}
+//void SetCursorPos(int XPos, int YPos)
+//{
+//  printf("\033[%d;%dH", YPos+1, XPos+1);
+//  // printf("test");
+//  // printf("\033[%d;%dH", 10, 10);
+//  // cout<< "test2";
+//}
+//
+//void OutputData(int XPos, int YPos, string text)
+//{
+//
+//  SetCursorPos( XPos, YPos);
+//  cout<< text<< std::flush;
+//}
 
 
 
@@ -306,7 +315,7 @@ int NextWaypoint(double x, double y, double theta, const vector<double> &maps_x,
 
 // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
 vector<double> getFrenet(double x, double y, double theta, const vector<double> &maps_x, const vector<double> &maps_y)
-                        {
+                                                {
   int next_wp = NextWaypoint(x,y, theta, maps_x,maps_y);
 
   int prev_wp;
@@ -351,11 +360,11 @@ vector<double> getFrenet(double x, double y, double theta, const vector<double> 
 
   return {frenet_s,frenet_d};
 
-                        }
+                                                }
 
 // Transform from Frenet s,d coordinates to Cartesian x,y
 vector<double> getXY(double s, double d, const vector<double> &maps_s, const vector<double> &maps_x, const vector<double> &maps_y)
-                        {
+                                                {
   int prev_wp = -1;
 
   while(s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1) ))
@@ -379,12 +388,12 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 
   return {x,y};
 
-                        }
+                                                }
 int count_of_msgs = 0;
 
 
 // Sort the Lanes by their cost
-int SortLanesByCost(Lane lane0, Lane lane1, Lane lane2){
+int GetMostEfficentLane(Lane lane0, Lane lane1, Lane lane2){
   int bestLane=99;
 
   vector<Lane> lanes;
@@ -394,143 +403,143 @@ int SortLanesByCost(Lane lane0, Lane lane1, Lane lane2){
 
 
   std::sort(lanes.begin(), lanes.end(),
-            [](Lane const & a, Lane const & b) -> bool
-            { return a.laneCost < b.laneCost; } );
+      [](Lane const & a, Lane const & b) -> bool
+      { return a.laneEfficencyCost < b.laneEfficencyCost; } );
 
   bestLane = lanes[0].laneNumber;
   //TODO delete cout
-//  cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tbestLane: " << bestLane<<endl;
+  //  cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tbestLane: " << bestLane<<endl;
   return bestLane;
 }
 
-// output the debug labels in the terminal
-void OutputLabels() {
-  cout << "\033[2J\033[1;1H";
-  OutputData(labelLeftx, labelCarSummary, "CAR SUMMARY: ");
-  OutputData(data0x, labelCarSummary, "EGO SUMMARY: ");
-  OutputData(data1x, labelCarSummary, "AHEAD SUMMARY: ");
-  OutputData(data2x, labelCarSummary, "BEHIND SUMMARY: ");
-
-
-  // EGO vehicle labels
-  OutputData(labelLeftx, labelEgoCoordidy, "Veh id: ");
-  OutputData(labelLeftx, labelEgoCoorddy, "Veh d: ");
-  OutputData(labelLeftx, labelEgoActsy, "Veh s: ");
-  OutputData(labelLeftx, labelEgoPthEndsy, "Veh Path s: ");
-  OutputData(labelLeftx, labelEgoVy, "Veh v: ");
-  OutputData(labelLeftx, labelEgoCoordxy, "Veh x: ");
-  OutputData(labelLeftx, labelEgoCoordyy, "Veh y: ");
-  OutputData(labelLeftx, labelEgoMaxvy, "Veh Max V: ");
-  OutputData(labelLeftx, labelEgoTgtvy, "Veh Tgt V: ");
-  OutputData(labelLeftx, labelEgoReqvy, "Veh Req V: ");
-  OutputData(labelLeftx, labelEgoActvy, "Veh Act V: ");
-
-
-// Lane summary
-  OutputData(labelLeftx, labelNoWayPtsy, "No of prev Waypts : ");
-  OutputData(labelLeftx, labelLaneTitley, "Lane: ");
-  OutputData(data0x, labelLaneTitley, "Lane0: ");
-  OutputData(data1x, labelLaneTitley, "Lane1 : ");
-  OutputData(data2x, labelLaneTitley, "Lane2 : ");
-  OutputData(labelLeftx, labelLaneCnty, "Total Veh Cnt: ");
-  OutputData(labelLeftx, labelLaneAhdCnty, "Ahead Veh Cnt: ");
-  OutputData(labelLeftx, labelLaneAhdVehSpdy, "Ahead Veh Spd: ");
-  OutputData(labelLeftx, labelLaneAhdSy, "Ahead Veh S: ");
-  OutputData(labelLeftx, labelLaneBhdVehSpdy, "Behind Veh Spd: ");
-  OutputData(labelLeftx, labelLaneBhdSy, "Behind Next Veh S: ");
-
-
-  OutputData(labelLeftx, labelLaneThreaty, "No Threat Veh: ");
-  OutputData(labelLeftx, labelLaneCosty, "Lane Cost: ");
-
-  OutputData(labelLeftx, labelCars_0y, "CARS: ");
-
-  for (int i = 0; i < 6; i++) {
-    OutputData(labelTrafCoordsx, labelCar0_0y + i * labelCarOffsety, "veh id: ");
-    OutputData(labelTrafCoordsx, labelCar0_1y + i * labelCarOffsety, "veh d: ");
-    OutputData(labelTrafCoordsx, labelCar0_2y + i * labelCarOffsety, "veh s: ");
-    OutputData(labelTrafCoordsx, labelCar0_3y + i * labelCarOffsety, "veh v: ");
-    OutputData(labelTrafCoordsx, labelCar0_4y + i * labelCarOffsety, "veh delta s: ");
-    OutputData(labelTrafCoordsx, labelCar0_5y + i * labelCarOffsety, "veh proj s: ");
-  }
-
-  SetCursorPos(0, 0);
-}
-
-// output the debug information for the other cars in the traffic
-void output_traffic_debug(vector<Car> lane_cars, int datax) {
-  for (int i = 0; i < 6; i++) {
-    OutputData(datax, labelCar0_0y + i * labelCarOffsety, "               ");
-    OutputData(datax, labelCar0_1y + i * labelCarOffsety, "               ");
-    OutputData(datax, labelCar0_2y + i * labelCarOffsety, "               ");
-    OutputData(datax, labelCar0_3y + i * labelCarOffsety, "               ");
-    OutputData(datax, labelCar0_4y + i * labelCarOffsety, "               ");
-    OutputData(datax, labelCar0_5y + i * labelCarOffsety, "               ");
-    OutputData(datax, labelCar0_6y + i * labelCarOffsety, "               ");
-  }
-  for (int i = 0; i < lane_cars.size(); i++) {
-    Car car = lane_cars[i];
-    OutputData(datax, labelCar0_0y + i * labelCarOffsety,
-        std::to_string(car.car_id));
-    OutputData(datax, labelCar0_1y + i * labelCarOffsety,
-        std::to_string(car.car_d)); //,"veh 1 d: ");
-    OutputData(datax, labelCar0_2y + i * labelCarOffsety,
-        std::to_string(car.car_s)); //,"veh 2 s: ");
-    OutputData(datax, labelCar0_3y + i * labelCarOffsety,
-        std::to_string(car.getSpeedMph())); //,"veh 3 v: ");
-    OutputData(datax, labelCar0_4y + i * labelCarOffsety,
-        std::to_string(car.car_delta_s)); //,"veh 4 delta s: ");
-    OutputData(datax, labelCar0_5y + i * labelCarOffsety,
-        std::to_string(car.car_projected_delta_s)); //,"veh 4 delta s: ");
-  }
-}
-
-
-void OutputLaneSummary(Lane& lane0, Lane& lane1, Lane& lane2) {
-  OutputData(data0x, labelLaneCnty, std::to_string(lane0.numberTotalCars));
-  OutputData(data1x, labelLaneCnty, std::to_string(lane1.numberTotalCars));
-  OutputData(data2x, labelLaneCnty, std::to_string(lane2.numberTotalCars));
-  OutputData(data0x, labelLaneAhdCnty, std::to_string(lane0.numberAheadCars));
-  OutputData(data1x, labelLaneAhdCnty, std::to_string(lane1.numberAheadCars));
-  OutputData(data2x, labelLaneAhdCnty, std::to_string(lane2.numberAheadCars));
-  OutputData(data0x, labelLaneAhdVehSpdy,
-      std::to_string(lane0.nearest_ahead_car.car_speed * 2.24));
-  OutputData(data1x, labelLaneAhdVehSpdy,
-      std::to_string(lane1.nearest_ahead_car.car_speed * 2.24));
-  OutputData(data2x, labelLaneAhdVehSpdy,
-      std::to_string(lane2.nearest_ahead_car.car_speed * 2.24));
-  OutputData(data0x, labelLaneAhdSy,
-      std::to_string(lane0.nearest_ahead_car.car_projected_delta_s));
-  OutputData(data1x, labelLaneAhdSy,
-      std::to_string(lane1.nearest_ahead_car.car_projected_delta_s));
-  OutputData(data2x, labelLaneAhdSy,
-      std::to_string(lane2.nearest_ahead_car.car_projected_delta_s));
-  OutputData(data0x, labelLaneBhdVehSpdy,
-      std::to_string(lane0.nearest_behind_car.car_speed * 2.24));
-  OutputData(data1x, labelLaneBhdVehSpdy,
-      std::to_string(lane1.nearest_behind_car.car_speed * 2.24));
-  OutputData(data2x, labelLaneBhdVehSpdy,
-      std::to_string(lane2.nearest_behind_car.car_speed * 2.24));
-  OutputData(data0x, labelLaneBhdSy,
-      std::to_string(lane0.nearest_behind_car.car_projected_delta_s));
-  OutputData(data1x, labelLaneBhdSy,
-      std::to_string(lane1.nearest_behind_car.car_projected_delta_s));
-  OutputData(data2x, labelLaneBhdSy,
-      std::to_string(lane2.nearest_behind_car.car_projected_delta_s));
-  OutputData(data0x, labelLaneThreaty, std::to_string(lane0.numberThreatCars));
-  OutputData(data1x, labelLaneThreaty, std::to_string(lane1.numberThreatCars));
-  OutputData(data2x, labelLaneThreaty, std::to_string(lane2.numberThreatCars));
-  OutputData(data0x, labelLaneCosty, std::to_string(lane0.laneCost));
-  OutputData(data1x, labelLaneCosty, std::to_string(lane1.laneCost));
-  OutputData(data2x, labelLaneCosty, std::to_string(lane2.laneCost));
-
-  if (debug){
-    output_traffic_debug(lane0.lane_cars, data0x);
-    output_traffic_debug(lane1.lane_cars, data1x);
-    output_traffic_debug(lane2.lane_cars, data2x);
-  }
-
-}
+//// output the debug labels in the terminal
+//void OutputLabels() {
+//  cout << "\033[2J\033[1;1H";
+//  OutputData(labelLeftx, labelCarSummary, "CAR SUMMARY: ");
+//  OutputData(data0x, labelCarSummary, "EGO SUMMARY: ");
+//  OutputData(data1x, labelCarSummary, "AHEAD SUMMARY: ");
+//  OutputData(data2x, labelCarSummary, "BEHIND SUMMARY: ");
+//
+//
+//  // EGO vehicle labels
+//  OutputData(labelLeftx, labelEgoCoordidy, "Veh id: ");
+//  OutputData(labelLeftx, labelEgoCoorddy, "Veh d: ");
+//  OutputData(labelLeftx, labelEgoActsy, "Veh s: ");
+//  OutputData(labelLeftx, labelEgoPthEndsy, "Veh Path s: ");
+//  OutputData(labelLeftx, labelEgoVy, "Veh v: ");
+//  OutputData(labelLeftx, labelEgoCoordxy, "Veh x: ");
+//  OutputData(labelLeftx, labelEgoCoordyy, "Veh y: ");
+//  OutputData(labelLeftx, labelEgoMaxvy, "Veh Max V: ");
+//  OutputData(labelLeftx, labelEgoTgtvy, "Veh Tgt V: ");
+//  OutputData(labelLeftx, labelEgoReqvy, "Veh Req V: ");
+//  OutputData(labelLeftx, labelEgoActvy, "Veh Act V: ");
+//
+//
+//  // Lane summary
+//  OutputData(labelLeftx, labelNoWayPtsy, "No of prev Waypts : ");
+//  OutputData(labelLeftx, labelLaneTitley, "Lane: ");
+//  OutputData(data0x, labelLaneTitley, "Lane0: ");
+//  OutputData(data1x, labelLaneTitley, "Lane1 : ");
+//  OutputData(data2x, labelLaneTitley, "Lane2 : ");
+//  OutputData(labelLeftx, labelLaneCnty, "Total Veh Cnt: ");
+//  OutputData(labelLeftx, labelLaneAhdCnty, "Ahead Veh Cnt: ");
+//  OutputData(labelLeftx, labelLaneAhdVehSpdy, "Ahead Veh Spd: ");
+//  OutputData(labelLeftx, labelLaneAhdSy, "Ahead Veh S: ");
+//  OutputData(labelLeftx, labelLaneBhdVehSpdy, "Behind Veh Spd: ");
+//  OutputData(labelLeftx, labelLaneBhdSy, "Behind Next Veh S: ");
+//
+//
+//  OutputData(labelLeftx, labelLaneThreaty, "No Threat Veh: ");
+//  OutputData(labelLeftx, labelLaneCosty, "Lane Cost: ");
+//
+//  OutputData(labelLeftx, labelCars_0y, "CARS: ");
+//
+//  for (int i = 0; i < 6; i++) {
+//    OutputData(labelTrafCoordsx, labelCar0_0y + i * labelCarOffsety, "veh id: ");
+//    OutputData(labelTrafCoordsx, labelCar0_1y + i * labelCarOffsety, "veh d: ");
+//    OutputData(labelTrafCoordsx, labelCar0_2y + i * labelCarOffsety, "veh s: ");
+//    OutputData(labelTrafCoordsx, labelCar0_3y + i * labelCarOffsety, "veh v: ");
+//    OutputData(labelTrafCoordsx, labelCar0_4y + i * labelCarOffsety, "veh delta s: ");
+//    OutputData(labelTrafCoordsx, labelCar0_5y + i * labelCarOffsety, "veh proj s: ");
+//  }
+//
+//  SetCursorPos(0, 0);
+//}
+//
+//// output the debug information for the other cars in the traffic
+//void output_traffic_debug(vector<Car> lane_cars, int datax) {
+//  for (int i = 0; i < 6; i++) {
+//    OutputData(datax, labelCar0_0y + i * labelCarOffsety, "               ");
+//    OutputData(datax, labelCar0_1y + i * labelCarOffsety, "               ");
+//    OutputData(datax, labelCar0_2y + i * labelCarOffsety, "               ");
+//    OutputData(datax, labelCar0_3y + i * labelCarOffsety, "               ");
+//    OutputData(datax, labelCar0_4y + i * labelCarOffsety, "               ");
+//    OutputData(datax, labelCar0_5y + i * labelCarOffsety, "               ");
+//    OutputData(datax, labelCar0_6y + i * labelCarOffsety, "               ");
+//  }
+//  for (int i = 0; i < lane_cars.size(); i++) {
+//    Car car = lane_cars[i];
+//    OutputData(datax, labelCar0_0y + i * labelCarOffsety,
+//        std::to_string(car.car_id));
+//    OutputData(datax, labelCar0_1y + i * labelCarOffsety,
+//        std::to_string(car.car_d)); //,"veh 1 d: ");
+//    OutputData(datax, labelCar0_2y + i * labelCarOffsety,
+//        std::to_string(car.car_s)); //,"veh 2 s: ");
+//    OutputData(datax, labelCar0_3y + i * labelCarOffsety,
+//        std::to_string(car.getSpeedMph())); //,"veh 3 v: ");
+//    OutputData(datax, labelCar0_4y + i * labelCarOffsety,
+//        std::to_string(car.car_delta_s)); //,"veh 4 delta s: ");
+//    OutputData(datax, labelCar0_5y + i * labelCarOffsety,
+//        std::to_string(car.car_projected_delta_s)); //,"veh 4 delta s: ");
+//  }
+//}
+//
+//
+//void OutputLaneSummary(Lane& lane0, Lane& lane1, Lane& lane2) {
+//  OutputData(data0x, labelLaneCnty, std::to_string(lane0.numberTotalCars));
+//  OutputData(data1x, labelLaneCnty, std::to_string(lane1.numberTotalCars));
+//  OutputData(data2x, labelLaneCnty, std::to_string(lane2.numberTotalCars));
+//  OutputData(data0x, labelLaneAhdCnty, std::to_string(lane0.numberAheadCars));
+//  OutputData(data1x, labelLaneAhdCnty, std::to_string(lane1.numberAheadCars));
+//  OutputData(data2x, labelLaneAhdCnty, std::to_string(lane2.numberAheadCars));
+//  OutputData(data0x, labelLaneAhdVehSpdy,
+//      std::to_string(lane0.nearest_ahead_car.car_speed * 2.24));
+//  OutputData(data1x, labelLaneAhdVehSpdy,
+//      std::to_string(lane1.nearest_ahead_car.car_speed * 2.24));
+//  OutputData(data2x, labelLaneAhdVehSpdy,
+//      std::to_string(lane2.nearest_ahead_car.car_speed * 2.24));
+//  OutputData(data0x, labelLaneAhdSy,
+//      std::to_string(lane0.nearest_ahead_car.car_projected_delta_s));
+//  OutputData(data1x, labelLaneAhdSy,
+//      std::to_string(lane1.nearest_ahead_car.car_projected_delta_s));
+//  OutputData(data2x, labelLaneAhdSy,
+//      std::to_string(lane2.nearest_ahead_car.car_projected_delta_s));
+//  OutputData(data0x, labelLaneBhdVehSpdy,
+//      std::to_string(lane0.nearest_behind_car.car_speed * 2.24));
+//  OutputData(data1x, labelLaneBhdVehSpdy,
+//      std::to_string(lane1.nearest_behind_car.car_speed * 2.24));
+//  OutputData(data2x, labelLaneBhdVehSpdy,
+//      std::to_string(lane2.nearest_behind_car.car_speed * 2.24));
+//  OutputData(data0x, labelLaneBhdSy,
+//      std::to_string(lane0.nearest_behind_car.car_projected_delta_s));
+//  OutputData(data1x, labelLaneBhdSy,
+//      std::to_string(lane1.nearest_behind_car.car_projected_delta_s));
+//  OutputData(data2x, labelLaneBhdSy,
+//      std::to_string(lane2.nearest_behind_car.car_projected_delta_s));
+//  OutputData(data0x, labelLaneThreaty, std::to_string(lane0.numberThreatCars));
+//  OutputData(data1x, labelLaneThreaty, std::to_string(lane1.numberThreatCars));
+//  OutputData(data2x, labelLaneThreaty, std::to_string(lane2.numberThreatCars));
+//  OutputData(data0x, labelLaneCosty, std::to_string(lane0.laneCost));
+//  OutputData(data1x, labelLaneCosty, std::to_string(lane1.laneCost));
+//  OutputData(data2x, labelLaneCosty, std::to_string(lane2.laneCost));
+//
+//  if (debug){
+//    output_traffic_debug(lane0.lane_cars, data0x);
+//    output_traffic_debug(lane1.lane_cars, data1x);
+//    output_traffic_debug(lane2.lane_cars, data2x);
+//  }
+//
+//}
 
 int main() {
   uWS::Hub h;
@@ -583,6 +592,8 @@ int main() {
         auto j = json::parse(s);
         string event = j[0].get<string>();
         int no_of_pts = 50;
+
+
         if (event == "telemetry") {
           // j[1] is the data JSON object
           // Main car's localization Data
@@ -619,12 +630,12 @@ int main() {
           int safety_distance = 30;
 
           double lead_veh_speed = ref_vel;
-          int lane0_count = 0;
-          int lane1_count = 0;
-          int lane2_count = 0;
-          int lane0_ahead_count = 0;
-          int lane1_ahead_count = 0;
-          int lane2_ahead_count = 0;
+          //          int lane0_count = 0;
+          //          int lane1_count = 0;
+          //          int lane2_count = 0;
+          //          int lane0_ahead_count = 0;
+          //          int lane1_ahead_count = 0;
+          //          int lane2_ahead_count = 0;
           vector<Car> traffic;
           vector<Car> lane0_cars;
           vector<Car> lane1_cars;
@@ -640,6 +651,11 @@ int main() {
           lane1.laneNumber = lane_num1;
           lane2.laneNumber = lane_num2;
 
+          vector<Lane> lanes;
+
+
+
+
           // parse the sensor fusion data and create cars and laes to represent each element
           for (int i = 0;i < sensor_fusion.size();i++) {
             // retreive teh sensor data
@@ -652,89 +668,206 @@ int main() {
             // calculate so additional data items
             double sensed_car_v = sqrt(sensed_car_vx * sensed_car_vx + sensed_car_vy * sensed_car_vy);
             double delta_s = sensed_car_s - ego_car_actual_s;
-            double projected_s = sensed_car_s + ((double)(((prev_size))) * 0.02 * sensed_car_v);
-                //calculate the projected delta s
-                // should this be form the ego_car_s or the projected_ego_car_s?
-                double projected_delta_s = projected_s - end_path_s;
-                Car this_car = Car(sensed_car_id, sensed_car_s, sensed_car_d, sensed_car_v, delta_s, projected_s, projected_delta_s);
-                //lane 0
-                if (sensed_car_d < (2 + 4 * lane_num0 + 2) && sensed_car_d > (2 + 4 * lane_num0 - 2)) {
-                  lane0.addCar(this_car);
-                } else
-                if (sensed_car_d < (2 + 4 * lane_num1 + 2) && sensed_car_d > (2 + 4 * lane_num1 - 2)) {
-                  lane1.addCar(this_car);
-                } else
+            double sensed_car_projected_s = sensed_car_s + ((double)(((prev_size))) * 0.02 * sensed_car_v);
+            //calculate the projected delta s
+            // should this be form the ego_car_s or the projected_ego_car_s?
+            double projected_delta_s = sensed_car_projected_s - end_path_s;
+            Car this_car = Car(sensed_car_id, sensed_car_s, sensed_car_d, sensed_car_v, delta_s, sensed_car_projected_s, projected_delta_s);
+            //lane 0
+            //TODO, sort out the lane poisiton calcs, unnecessarily complex 4* (lane_num0 +1)
+            // upper boundary                        lower boundary
+            if (sensed_car_d < (2 + 4 * lane_num0 + 2) && sensed_car_d > (2 + 4 * lane_num0 - 2)) {
+              lane0.addCar(this_car);
+            } else
+              if (sensed_car_d < (2 + 4 * lane_num1 + 2) && sensed_car_d > (2 + 4 * lane_num1 - 2)) {
+                lane1.addCar(this_car);
+              } else
                 if (sensed_car_d < (2 + 4 * lane_num2 + 2) && sensed_car_d > (2 + 4 * lane_num2 - 2)) {
                   lane2.addCar(this_car);
                 }
+          }
+
+          // evaluate the lanes
+          lane0.evaluate();
+          lane1.evaluate();
+          lane2.evaluate();
+
+          efficent_lane = GetMostEfficentLane(lane0, lane1, lane2);
+
+          Lane current_lane_obj  = getCurrentLane(ego_car_d, lane0, lane1, lane2 );
+
+          lanes.push_back(lane0);
+          lanes.push_back(lane1);
+          lanes.push_back(lane2);
+
+
+//          Lane current_lane_obj = lanes[getCurrentLaneNumber(ego_car_d)];
+          //          if (abs(target_lane - current_lane_obj.laneNumber) > 1) {
+          //            // multi lane change
+          //          }
+          //          else if (abs(target_lane - current_lane_obj.laneNumber) == 1) {
+          //// single lane change
+          //
+          //          }
+
+          //          next_lane = current_lane_obj.laneNumber;
+          double safety_cost;
+//          if (target_lane < current_lane_obj.laneNumber ) {
+//            // left hand lane change
+//            next_lane = current_lane_obj.laneNumber -1;
+//          }
+//          else if (target_lane > current_lane_obj.laneNumber ) {
+//
+//            next_lane = current_lane_obj.laneNumber +1;
+//
+//          }
+//          else
+//            next_lane = current_lane_obj.laneNumber;
+
+          OutputData(data1x, labelEgoStatey, std::to_string(efficent_lane));
+          OutputData(data2x, labelEgoStatey, std::to_string(next_lane));
+//          OutputData(data0x, labelEgoStatey, std::to_string(lanes[getCurrentLaneNumber(ego_car_d)].numberAheadCars));
+
+
+          // really rough state machine
+          if (STATE == StayInLane){
+            // if target lane is not the current lane....
+            if (efficent_lane != current_lane_obj.laneNumber) {
+              // set the state
+
+
+              STATE = LaneChange;
+
+              if (efficent_lane < current_lane_obj.laneNumber && !lanes[getCurrentLaneNumber(ego_car_d)-1].hasThreatCars) {
+                // left hand lane change
+                next_lane = current_lane_obj.laneNumber -1;
               }
+              else if (efficent_lane > current_lane_obj.laneNumber  && !lanes[getCurrentLaneNumber(ego_car_d)+1].hasThreatCars ) {
 
-              // evaluate the lanes
-              lane0.evaluate();
-              lane1.evaluate();
-              lane2.evaluate();
-              target_lane = SortLanesByCost(lane0, lane1, lane2);
+                next_lane = current_lane_obj.laneNumber +1;
 
-
-              //////////////////////////////////////
-              // analsye the current lane
-              Lane current_lane_obj  = getCurrentLane(ego_car_d, lane0, lane1, lane2 );
-//              int current_lane = getCurrentLane(ego_car_d, lane0, lane1, lane2 );
-//              if (current_lane == 0) {
-//                current_lane_obj = lane0;
-//              } else
-//              if (current_lane == 1) {
-//                current_lane_obj = lane1;
-//              } else
-//              if (current_lane == 2) {
-//                current_lane_obj = lane2;
-//              } else {
-//              }
-
-              ///////////////////////////////////////////////////////////////////////////////////////////////
-              // SPEED
-              // check if the ego vehicle is close to the target vehicle
-              double ego_target_speed = max_speed;
-              if (current_lane_obj.hasAheadCar) {
-                //            cout << "car ahead"<< endl;
-                Car target_car = current_lane_obj.getNearestAheadCar();
-                OutputData(data0x, labelEgoVy, std::to_string(ego_car_speed));
-                OutputData(data0x, labelEgoActvy, std::to_string(ego_car_speed));
-
-                if ((target_car.car_projected_delta_s) < safety_distance) {
-                  ego_target_speed = target_car.car_speed * 2.24;
-                }
               }
-              else // no vehicle ahead
-              {
-                ego_target_speed = max_speed;
-              }
-              if (ego_car_speed > ego_target_speed) {
-                // going to fast, decrease speed
-                ego_req_speed -= 0.224;
-              } else {
-                ego_req_speed += 0.224;
-              }
-              if (ego_req_speed > max_speed) {
-                ego_req_speed = max_speed;
-              }
+              else
+                next_lane = current_lane_obj.laneNumber;
 
+              //              if (target_lane < current_lane_obj.laneNumber ) {
+              //                // left hand lane change
+              //                next_lane = current_lane_obj.laneNumber -1;
+              //              }
+              //              else if (target_lane > current_lane_obj.laneNumber ) {
+              //
+              //                next_lane = current_lane_obj.laneNumber +1;
+              //
+              //              }
+              //
+              //
+              //              else {
+              //                STATE = StayInLane;
+              //              }
 
-              OutputData(data0x, labelEgoMaxvy, std::to_string(max_speed));
-              OutputData(data0x, labelEgoTgtvy, std::to_string(ego_target_speed));
-              OutputData(data0x, labelEgoReqvy, std::to_string(ego_req_speed));
-              OutputData(data0x, labelEgoActvy, std::to_string(ego_car_speed));
-              OutputData(data0x, labelEgoCoordxy, std::to_string(ego_car_x));
-              OutputData(data0x, labelEgoCoordyy, std::to_string(ego_car_y));
-              OutputData(data0x, labelEgoActsy, std::to_string(ego_car_actual_s));
-              OutputData(data0x, labelEgoPthEndsy, std::to_string(end_path_s));
-              OutputData(data0x, labelEgoCoorddy, std::to_string(ego_car_d));
+              //              OutputData(data1x, labelEgoStatey, std::to_string(target_lane));
+              //              OutputData(data2x, labelEgoStatey, std::to_string(next_lane));
 
-              OutputLaneSummary(lane0, lane1, lane2);
+              //              switch (next_lane)
+              //              {
+              //              case 0: safety_cost = lane0.getLaneSafetyCost();
+              //              break;
+              //              case 1: safety_cost = lane1.getLaneSafetyCost();
+              //              break;
+              //              case 2: safety_cost = lane2.getLaneSafetyCost();
+              //              break;
+              //              }
+              //              if (safety_cost != 0)
+              //              {
+              //                next_lane = current_lane_obj.laneNumber;
+              //              }
+            }
+          }
+          // already changing lane
+          else {
+            //              OutputData(data1x, labelEgoStatey, std::to_string(target_lane));
+            //              OutputData(data2x, labelEgoStatey, std::to_string(next_lane));
+            // if ego d is near the centre of the new lane, then change state again.
+            // check to see if the car position is now aligned to near the centre of the new lane
+            // if (ego_car_d > centre_d_l  && ego_car_d < centre_d_r)
+            if (ego_car_d < (2 + 4 * (next_lane)+0.5)  && ego_car_d > (2+ 4 * next_lane - 0.5)) {
+              // change to stay in lane
+              STATE = StayInLane;
+            }
 
+          }
 
-              ///////////////////////////////////////////////////////////////////////////////
-              // create the new path
+          //            sensed_car_d < (2 + 4 * lane_num1 + 2)
+
+          //////////////////////////////////////
+          // analsye the current lane
+          // state machine
+          //          double safetyCost;
+          if (STATE == LaneChange) {
+            // evaluate only safety cos
+//            switch (next_lane)
+//            {
+//            case 0: safety_cost = lane0.getLaneSafetyCost();
+//            break;
+//            case 1: safety_cost = lane1.getLaneSafetyCost();
+//            break;
+//            case 2: safety_cost = lane2.getLaneSafetyCost();
+//            break;
+//            }
+          }
+          else if (STATE == StayInLane){
+            // evaluate safety cost and efficency
+            //            GetMostEfficentLane (lane0,lane1, lane2)
+
+          }
+
+          ///////////////////////////////////////////////////////////////////////////////////////////////
+          // SPEED
+          // check if the ego vehicle is close to the target vehicle
+          double ego_target_speed = max_speed;
+          if (current_lane_obj.hasAheadCar) {
+                        cout << endl<< "car ahead"<< endl;
+            Car target_car = current_lane_obj.getNearestAheadCar();
+//            OutputData(data0x, labelEgoVy, std::to_string(ego_car_speed));
+//            OutputData(data0x, labelEgoActvy, std::to_string(ego_car_speed));
+
+            if ((target_car.projected_delta_s) < safety_distance) {
+              ego_target_speed = target_car.speed * 2.24;
+            }
+          }
+          else // no vehicle ahead
+          {
+            ego_target_speed = max_speed;
+          }
+          if (ego_car_speed > ego_target_speed) {
+            // going to fast, decrease speed
+            ego_req_speed -= 0.224;
+          } else {
+            ego_req_speed += 0.224;
+          }
+          if (ego_req_speed > max_speed) {
+            ego_req_speed = max_speed;
+          }
+
+          if ((count_of_msgs % 5)  == 0) {
+OutputEgo(max_speed, ego_target_speed, ego_req_speed, ego_car_speed, ego_car_x,ego_car_y, ego_car_actual_s, end_path_s, ego_car_d);
+          }
+//          OutputData(data0x, labelEgoMaxvy, std::to_string(max_speed));
+//          OutputData(data0x, labelEgoTgtvy, std::to_string(ego_target_speed));
+//          OutputData(data0x, labelEgoReqvy, std::to_string(ego_req_speed));
+//          OutputData(data0x, labelEgoActvy, std::to_string(ego_car_speed));
+//          OutputData(data0x, labelEgoCoordxy, std::to_string(ego_car_x));
+//          OutputData(data0x, labelEgoCoordyy, std::to_string(ego_car_y));
+//          OutputData(data0x, labelEgoActsy, std::to_string(ego_car_actual_s));
+//          OutputData(data0x, labelEgoPthEndsy, std::to_string(end_path_s));
+//          OutputData(data0x, labelEgoCoorddy, std::to_string(ego_car_d));
+
+          if ((count_of_msgs % 5)  == 0) {
+          OutputLaneSummary(lane0, lane1, lane2);
+          }
+
+          ///////////////////////////////////////////////////////////////////////////////
+          // create the new path
           vector<double> ptsx;
           vector<double> ptsy;
           double ref_x = ego_car_x;
@@ -764,12 +897,12 @@ int main() {
             ptsy.push_back(ref_y_prev);
             ptsy.push_back(ref_y);
           }
-
+//          next_lane =1;
 
           int target_s = 30;
-          vector<double> next_wp0 = getXY(end_path_s + target_s, (2+4*target_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          vector<double> next_wp1 = getXY(end_path_s + target_s *2 , (2+4*target_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
-          vector<double> next_wp2 = getXY(end_path_s + target_s *3, (2+4*target_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector<double> next_wp0 = getXY(end_path_s + target_s, (2+4*next_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector<double> next_wp1 = getXY(end_path_s + target_s *2 , (2+4*next_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
+          vector<double> next_wp2 = getXY(end_path_s + target_s *3, (2+4*next_lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
 
 
           // push the new points onto the next waypoints vectors
