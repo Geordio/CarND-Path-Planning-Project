@@ -25,7 +25,7 @@ Car::Car(int id, double s, double d, double speed, double delta_s) {
   //  double car_speed;
 }
 
-Car::Car(int _id, double _s, double _d, double _speed, double _delta_s, double _projected_s,double _projected_delta_s) {
+Car::Car(int _id, double _s, double _d, double _speed, double _delta_s, double _projected_s,double _projected_delta_s, double _delta_speed) {
   // TODO Auto-generated constructor stub
   this->id = _id;
   //  this->car_x= x;
@@ -36,6 +36,7 @@ Car::Car(int _id, double _s, double _d, double _speed, double _delta_s, double _
   this->delta_s = _delta_s;
   this->projected_s = _projected_s;
   this->projected_delta_s = _projected_delta_s;
+  this->delta_speed = _delta_speed;
   //  double car_yaw;
   //  double car_speed;
 }

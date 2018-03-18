@@ -30,7 +30,7 @@ Lane::~Lane() {
 
 Car Lane::calcNearestAheadCar(){
 
-//  Car ahead_car;
+  //  Car ahead_car;
   int nearest_s = 99999;
   for (int i = 0; i < this->lane_cars.size(); i++){
     if (this->lane_cars[i].delta_s > 0 ) {
@@ -47,19 +47,19 @@ Car Lane::calcNearestAheadCar(){
 
 Car Lane::getNearestAheadCar(){
 
-//  Car nearest_projected_ahead_car;
+  //  Car nearest_projected_ahead_car;
   return nearest_ahead_car;
 }
 
 Car Lane::calcNearestProjectedAheadCar(){
 
-//  Car nearest_projected_ahead_car;
+  //  Car nearest_projected_ahead_car;
   int nearest_s = 99999;
   for (int i = 0; i < this->lane_cars.size(); i++){
     if (this->lane_cars[i].projected_delta_s > 0 ) {
       this->hasProjectedAheadCar =true;
       if (this->lane_cars[i].projected_delta_s < nearest_s) {
-//        nearest_projected_s = this->lane_cars[i].car_projected_delta_s;
+        //        nearest_projected_s = this->lane_cars[i].car_projected_delta_s;
         nearest_projected_ahead_car = this->lane_cars[i];
         //        this->nearest_ahead_car_speed = nearest_ahead_car.car_speed;
       }
@@ -70,17 +70,18 @@ Car Lane::calcNearestProjectedAheadCar(){
 
 Car Lane::getNearestProjectedAheadCar(){
 
-//  Car nearest_projected_ahead_car;
+  //  Car nearest_projected_ahead_car;
   return nearest_projected_ahead_car;
 }
 
 Car Lane::calcNearestBehindCar(){
 
-//    Car nearest_projected_behind_car;
-  int nearest_s = 99999;
+  //    Car nearest_projected_behind_car;
+  int nearest_s = -99999;
   for (int i = 0; i < this->lane_cars.size(); i++){
     if (this->lane_cars[i].delta_s < 0 ) {
-      if (abs(this->lane_cars[i].delta_s) < nearest_s) {
+      this->hasBehindCar =true;
+      if ((this->lane_cars[i].delta_s) > nearest_s) {
         nearest_s = abs(this->lane_cars[i].delta_s);
         nearest_behind_car = this->lane_cars[i];
         //        nearest = this->lane_cars[i];
@@ -98,11 +99,11 @@ Car Lane::getNearestBehindCar(){
 
 Car Lane::calcNearestProjectedBehindCar(){
 
-//    Car nearest_projected_behind_car;
-  int nearest_s = 99999;
+  //    Car nearest_projected_behind_car;
+  int nearest_s = -99999;
   for (int i = 0; i < this->lane_cars.size(); i++){
     if (this->lane_cars[i].projected_delta_s < 0 ) {
-      if (abs(this->lane_cars[i].projected_delta_s) < nearest_s) {
+      if ((this->lane_cars[i].projected_delta_s) > nearest_s) {
         nearest_s = abs(this->lane_cars[i].projected_delta_s);
         nearest_projected_behind_car = this->lane_cars[i];
         //        nearest = this->lane_cars[i];
@@ -145,6 +146,34 @@ std::string Lane::getNearestProjectedAheadCarDeltaSTxt() {
   }
   return text;
 }
+
+std::string Lane::getNearestProjectedBehindCarSpeedTxt() {
+  string text = "-               ";
+
+  if (this->hasBehindCar == true) {
+    text = std::to_string( nearest_projected_behind_car.speed * 2.24);
+  }
+  return text;
+}
+
+std::string Lane::getNearestProjectedBehindCarSTxt() {
+  string text = "-                ";
+
+  if (this->hasBehindCar == true) {
+    text = std::to_string( nearest_projected_behind_car.projected_s);
+  }
+  return text;
+}
+
+std::string Lane::getNearestBehindCarDeltaSTxt() {
+  string text = "-                ";
+
+  if (this->hasBehindCar == true) {
+    text = std::to_string( nearest_behind_car.projected_delta_s);
+  }
+  return text;
+}
+
 
 // Add a car to the vector of cars in the lane
 // increment the counts for total, ahead and behind cars
@@ -209,12 +238,13 @@ vector<Car> Lane::getThreatCars() {
       numberThreatCars++;
     }
 
-
-    else if (this->lane_cars[i].projected_delta_s < 0) {
+    else if (this->lane_cars[i].delta_s < 0) {
+      //      if (laneNumber == 0)
+      //      cout << "\t\t\t\t\t\t\t\t\t\t: " << std::to_string(lane_cars[i].delta_speed);
       // if the car is behind, but its projected speed will take it outside of the threat zone
-      if (this->lane_cars[i].delta_s <threatZoneRearLimit && this->lane_cars[i].projected_delta_s > threatZoneFrontLimit){
+      if (this->lane_cars[i].projected_delta_s > (threatZoneRearLimit - 40) && this->lane_cars[i].delta_speed > 20){
         hasThreatCars = true;
-      numberThreatCars++;
+        numberThreatCars++;
       }
     }
   }
@@ -247,7 +277,7 @@ double Lane::getLaneEfficencyCost() {
 
 
   if (hasProjectedAheadCar)
-    next_ahead_car_cost = (50-this->nearest_ahead_car_speed)/50 + 10/nearest_projected_ahead_car.projected_delta_s;
+    next_ahead_car_cost = (50-this->nearest_ahead_car_speed)/50 + 5/nearest_projected_ahead_car.projected_delta_s;
   else
     next_ahead_car_cost =0;
 
@@ -262,9 +292,9 @@ double Lane::getLaneEfficencyCost() {
   else
     congestion_cost =0;
 
-  not_inside_lane_cost = (NUMBER_OF_LANES - laneNumber-1) / 10;
+  not_inside_lane_cost = (NUMBER_OF_LANES - laneNumber-1) / 5;
 
-  cost = next_ahead_car_cost+ congestion_cost+not_inside_lane_cost;
+  cost = next_ahead_car_cost+ congestion_cost+ not_inside_lane_cost;
   this->laneEfficencyCost = cost;
   return cost;
 }
@@ -272,14 +302,11 @@ double Lane::getLaneEfficencyCost() {
 
 
 double Lane::getLaneSafetyCost() {
-  double cost = 0;
   double safe_cost = 0;
-  double congestion_cost = 0;
-  double ahead_speed_cost = 0;
-  double next_ahead_car_cost = 0;
-  double not_inside_lane_cost = 0;
+
 
   //  getThreatCars();
+
 
   // safety
   if (hasThreatCars)

@@ -32,6 +32,7 @@ double ref_vel = 0; //49.5
 const double max_speed = 49.5;
 double ego_req_speed = 0;
 int next_lane = 1;
+int last_lane = 1;
 //bool debug = true;
 
 const int SF_ID_IND = 0;
@@ -668,11 +669,12 @@ int main() {
             // calculate so additional data items
             double sensed_car_v = sqrt(sensed_car_vx * sensed_car_vx + sensed_car_vy * sensed_car_vy);
             double delta_s = sensed_car_s - ego_car_actual_s;
+            double sensed_car_delta_speed = sensed_car_v * 2.24 - ego_car_speed; // in mph
             double sensed_car_projected_s = sensed_car_s + ((double)(((prev_size))) * 0.02 * sensed_car_v);
             //calculate the projected delta s
             // should this be form the ego_car_s or the projected_ego_car_s?
             double projected_delta_s = sensed_car_projected_s - end_path_s;
-            Car this_car = Car(sensed_car_id, sensed_car_s, sensed_car_d, sensed_car_v, delta_s, sensed_car_projected_s, projected_delta_s);
+            Car this_car = Car(sensed_car_id, sensed_car_s, sensed_car_d, sensed_car_v, delta_s, sensed_car_projected_s, projected_delta_s, sensed_car_delta_speed);
             //lane 0
             //TODO, sort out the lane poisiton calcs, unnecessarily complex 4* (lane_num0 +1)
             // upper boundary                        lower boundary
@@ -694,14 +696,14 @@ int main() {
 
           efficent_lane = GetMostEfficentLane(lane0, lane1, lane2);
 
-          Lane current_lane_obj  = getCurrentLane(ego_car_d, lane0, lane1, lane2 );
+//          Lane current_lane_obj  = getCurrentLane(ego_car_d, lane0, lane1, lane2 );
 
           lanes.push_back(lane0);
           lanes.push_back(lane1);
           lanes.push_back(lane2);
 
 
-//          Lane current_lane_obj = lanes[getCurrentLaneNumber(ego_car_d)];
+          Lane current_lane_obj = lanes[getCurrentLaneNumber(ego_car_d)];
           //          if (abs(target_lane - current_lane_obj.laneNumber) > 1) {
           //            // multi lane change
           //          }
@@ -726,7 +728,7 @@ int main() {
 
           OutputData(data1x, labelEgoStatey, std::to_string(efficent_lane));
           OutputData(data2x, labelEgoStatey, std::to_string(next_lane));
-//          OutputData(data0x, labelEgoStatey, std::to_string(lanes[getCurrentLaneNumber(ego_car_d)].numberAheadCars));
+          OutputData(data0x, labelEgoStatey, std::to_string(STATE));
 
 
           // really rough state machine
@@ -734,15 +736,15 @@ int main() {
             // if target lane is not the current lane....
             if (efficent_lane != current_lane_obj.laneNumber) {
               // set the state
-
+               last_lane = getCurrentLaneNumber(ego_car_d);
 
               STATE = LaneChange;
 
-              if (efficent_lane < current_lane_obj.laneNumber && !lanes[getCurrentLaneNumber(ego_car_d)-1].hasThreatCars) {
+              if (efficent_lane < current_lane_obj.laneNumber && lanes[getCurrentLaneNumber(ego_car_d)-1].hasThreatCars== false) {
                 // left hand lane change
                 next_lane = current_lane_obj.laneNumber -1;
               }
-              else if (efficent_lane > current_lane_obj.laneNumber  && !lanes[getCurrentLaneNumber(ego_car_d)+1].hasThreatCars ) {
+              else if (efficent_lane > current_lane_obj.laneNumber  && lanes[getCurrentLaneNumber(ego_car_d)+1].hasThreatCars == false) {
 
                 next_lane = current_lane_obj.laneNumber +1;
 
@@ -794,6 +796,14 @@ int main() {
               // change to stay in lane
               STATE = StayInLane;
             }
+            //
+            // about the move if the taret lane is unsafe
+            else if (lanes[next_lane].hasThreatCars == true){
+              next_lane = last_lane;
+
+            }
+
+
 
           }
 
@@ -826,10 +836,8 @@ int main() {
           // check if the ego vehicle is close to the target vehicle
           double ego_target_speed = max_speed;
           if (current_lane_obj.hasAheadCar) {
-                        cout << endl<< "car ahead"<< endl;
-            Car target_car = current_lane_obj.getNearestAheadCar();
-//            OutputData(data0x, labelEgoVy, std::to_string(ego_car_speed));
-//            OutputData(data0x, labelEgoActvy, std::to_string(ego_car_speed));
+                        cout << endl<< "\t\t\t\t\t\t\t\t\t\tcar ahead"<< endl;
+            Car target_car = current_lane_obj.getNearestAheadCar();;
 
             if ((target_car.projected_delta_s) < safety_distance) {
               ego_target_speed = target_car.speed * 2.24;

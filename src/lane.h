@@ -39,6 +39,10 @@ public:
   std::string getNearestProjectedAheadCarSpeedTxt();
   std::string getNearestProjectedAheadCarSTxt();
   std::string getNearestProjectedAheadCarDeltaSTxt();
+  std::string getNearestProjectedBehindCarSpeedTxt();
+  std::string getNearestProjectedBehindCarSTxt();
+  std::string getNearestBehindCarDeltaSTxt();
+
   int NUMBER_OF_LANES = 3;
 
   void evaluate();

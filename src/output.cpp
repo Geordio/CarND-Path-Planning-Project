@@ -50,15 +50,24 @@ int labelLaneTitley = 17;
 int labelLaneCnty = labelLaneTitley + 1;
 int labelLaneAhdCnty = labelLaneTitley + 2;
 int labelLaneAhdVehSpdy = labelLaneTitley + 3;
-int labelLaneAhdSy = labelLaneTitley + 4;
-int labelLaneBhdVehSpdy = labelLaneTitley + 5;
-int labelLaneBhdSy = labelLaneTitley + 6;
-int labelLaneThreaty = labelLaneTitley + 7;
-int labelLaneCosty = labelLaneTitley + 8;
+int labelLaneAhdDSpdy = labelLaneTitley + 4;
+int labelLaneAhdSy = labelLaneTitley + 5;
+int labelLaneAhdDSy = labelLaneTitley + 6;
+int labelLaneAhdPDSy = labelLaneTitley + 7;
+
+int labelLaneBhdVehSpdy = labelLaneAhdPDSy + 1;
+int labelLaneBhdDSpdy = labelLaneAhdPDSy + 2;
+int labelLaneBhdSy = labelLaneAhdPDSy + 3;
+int labelLaneBhdDSy = labelLaneAhdPDSy + 4;
+int labelLaneBhdPDSy = labelLaneAhdPDSy + 5;
+
+
+int labelLaneThreaty = labelLaneBhdPDSy + 1;
+int labelLaneCosty = labelLaneBhdPDSy + 2;
 
 int labelTrafCoordsx = 2;
 // Cars group heading
-int labelCars_0y = 28;
+int labelCars_0y = 35;
 int labelCar0_0y = labelCars_0y + 1;
 int labelCar0_1y = labelCars_0y + 2;
 int labelCar0_2y = labelCars_0y + 3;
@@ -120,9 +129,16 @@ void OutputLabels() {
   OutputData(labelLeftx, labelLaneCnty, "Total Veh Cnt: ");
   OutputData(labelLeftx, labelLaneAhdCnty, "Ahead Veh Cnt: ");
   OutputData(labelLeftx, labelLaneAhdVehSpdy, "Ahead Veh Spd: ");
+  OutputData(labelLeftx, labelLaneAhdDSpdy, "Ahead Veh Del Spd: ");
   OutputData(labelLeftx, labelLaneAhdSy, "Ahead Veh S: ");
+  OutputData(labelLeftx, labelLaneAhdDSy, "Ahead Veh Del S: ");
+  OutputData(labelLeftx, labelLaneAhdPDSy, "Ahead Veh Proj Del S: ");
+
   OutputData(labelLeftx, labelLaneBhdVehSpdy, "Behind Veh Spd: ");
-  OutputData(labelLeftx, labelLaneBhdSy, "Behind Next Veh S: ");
+  OutputData(labelLeftx, labelLaneBhdDSpdy, "Behind Veh Del Spd: ");
+  OutputData(labelLeftx, labelLaneBhdSy, "Behind Veh S: ");
+  OutputData(labelLeftx, labelLaneBhdDSy, "Behind Veh Del S: ");
+  OutputData(labelLeftx, labelLaneBhdPDSy, "Behind Veh Proj Del S: ");
 
   OutputData(labelLeftx, labelLaneThreaty, "No Threat Veh: ");
   OutputData(labelLeftx, labelLaneCosty, "Lane Cost: ");
@@ -199,6 +215,19 @@ void OutputLaneSummary(Lane& lane0, Lane& lane1, Lane& lane2) {
   //  OutputData(data2x, labelLaneAhdVehSpdy,
   //      std::to_string(lane2.nearest_ahead_car.car_speed * 2.24));
 
+  OutputData(data0x, labelLaneAhdPDSy,lane0.getNearestProjectedAheadCarDeltaSTxt());
+  OutputData(data1x, labelLaneAhdPDSy,lane1.getNearestProjectedAheadCarDeltaSTxt());
+  OutputData(data2x, labelLaneAhdPDSy,lane2.getNearestProjectedAheadCarDeltaSTxt());
+
+  OutputData(data0x, labelLaneAhdSy,lane0.getNearestProjectedAheadCarSTxt());
+  OutputData(data1x, labelLaneAhdSy,lane1.getNearestProjectedAheadCarSTxt());
+  OutputData(data2x, labelLaneAhdSy,lane2.getNearestProjectedAheadCarSTxt());
+
+
+  OutputData(data0x, labelLaneAhdDSpdy,std::to_string(lane0.getNearestAheadCar().delta_speed));
+  OutputData(data1x, labelLaneAhdDSpdy,std::to_string(lane1.getNearestAheadCar().delta_speed));
+  OutputData(data2x, labelLaneAhdDSpdy,std::to_string(lane2.getNearestAheadCar().delta_speed));
+
   OutputData(data0x, labelLaneAhdVehSpdy, lane0.getNearestProjectedAheadCarSpeedTxt());
   OutputData(data1x, labelLaneAhdVehSpdy, lane1.getNearestProjectedAheadCarSpeedTxt());
   OutputData(data2x, labelLaneAhdVehSpdy, lane2.getNearestProjectedAheadCarSpeedTxt());
@@ -210,24 +239,30 @@ void OutputLaneSummary(Lane& lane0, Lane& lane1, Lane& lane2) {
   //  OutputData(data2x, labelLaneAhdSy,
   //      std::to_string(lane2.nearest_ahead_car.car_projected_delta_s));
 
-    OutputData(data0x, labelLaneAhdSy,lane0.getNearestProjectedAheadCarDeltaSTxt());
-    OutputData(data1x, labelLaneAhdSy,lane1.getNearestProjectedAheadCarDeltaSTxt());
-    OutputData(data2x, labelLaneAhdSy,lane2.getNearestProjectedAheadCarDeltaSTxt());
+    OutputData(data0x, labelLaneBhdPDSy,lane0.getNearestBehindCarDeltaSTxt());
+    OutputData(data1x, labelLaneBhdPDSy,lane1.getNearestBehindCarDeltaSTxt());
+    OutputData(data2x, labelLaneBhdPDSy,lane2.getNearestBehindCarDeltaSTxt());
 
+    OutputData(data0x, labelLaneBhdSy,lane0.getNearestProjectedBehindCarSTxt());
+    OutputData(data1x, labelLaneBhdSy,lane1.getNearestProjectedBehindCarSTxt());
+    OutputData(data2x, labelLaneBhdSy,lane2.getNearestProjectedBehindCarSTxt());
 
+    OutputData(data0x, labelLaneBhdDSpdy,std::to_string(lane0.getNearestBehindCar().delta_speed));
+    OutputData(data1x, labelLaneBhdDSpdy,std::to_string(lane1.getNearestBehindCar().delta_speed));
+    OutputData(data2x, labelLaneBhdDSpdy,std::to_string(lane2.getNearestBehindCar().delta_speed));
 
-  //  OutputData(data0x, labelLaneBhdVehSpdy,
-  //      std::to_string(lane0.nearest_behind_car.car_speed * 2.24));
-  //  OutputData(data1x, labelLaneBhdVehSpdy,
-  //      std::to_string(lane1.nearest_behind_car.car_speed * 2.24));
-  //  OutputData(data2x, labelLaneBhdVehSpdy,
-  //      std::to_string(lane2.nearest_behind_car.car_speed * 2.24));
-  //  OutputData(data0x, labelLaneBhdSy,
-  //      std::to_string(lane0.nearest_behind_car.car_projected_delta_s));
-  //  OutputData(data1x, labelLaneBhdSy,
-  //      std::to_string(lane1.nearest_behind_car.car_projected_delta_s));
-  //  OutputData(data2x, labelLaneBhdSy,
-  //      std::to_string(lane2.nearest_behind_car.car_projected_delta_s));
+    OutputData(data0x, labelLaneBhdVehSpdy,
+        std::to_string(lane0.nearest_behind_car.speed * 2.24));
+    OutputData(data1x, labelLaneBhdVehSpdy,
+        std::to_string(lane1.nearest_behind_car.speed * 2.24));
+    OutputData(data2x, labelLaneBhdVehSpdy,
+        std::to_string(lane2.nearest_behind_car.speed * 2.24));
+    OutputData(data0x, labelLaneBhdSy,
+        std::to_string(lane0.nearest_behind_car.projected_delta_s));
+    OutputData(data1x, labelLaneBhdSy,
+        std::to_string(lane1.nearest_behind_car.projected_delta_s));
+    OutputData(data2x, labelLaneBhdSy,
+        std::to_string(lane2.nearest_behind_car.projected_delta_s));
     OutputData(data0x, labelLaneThreaty, std::to_string(lane0.hasThreatCars)+", "+ std::to_string(lane0.numberThreatCars) );
     OutputData(data1x, labelLaneThreaty, std::to_string(lane1.numberThreatCars));
     OutputData(data2x, labelLaneThreaty, std::to_string(lane2.numberThreatCars));
