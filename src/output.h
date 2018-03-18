@@ -76,7 +76,7 @@ void SetCursorPos(int XPos, int YPos);
 void OutputData(int XPos, int YPos, std::string text);
 void OutputLabels();
 void output_traffic_debug(std::vector<Car> lane_cars, int datax);
-void OutputLaneSummary(Lane& lane0, Lane& lane1, Lane& lane2);
+void OutputLaneSummary(std::vector<Lane> lanes);
 void OutputEgo(double max_speed, double ego_target_speed, double ego_req_speed, double ego_car_speed, double ego_car_x,double ego_car_y, double ego_car_actual_s, double end_path_s, double ego_car_d);
 
 

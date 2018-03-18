@@ -30,7 +30,7 @@ public:
   Car calcNearestBehindCar();
   Car getNearestBehindCar();
   double getLaneAvgSpeed();
-  int getNoAheadCars();
+  int getNumberAheadCars();
   std::vector<Car> getThreatCars();
   double getLaneSafetyCost();
   double getLaneEfficencyCost();
@@ -71,7 +71,7 @@ public:
   double laneEfficencyCost = 99;
 
   // threat zone definitions.
-  double threatZoneFrontLimit = 10;
+  double threatZoneFrontLimit = 20;
   double threatZoneRearLimit = -10;
 
   // threat zone definitions.

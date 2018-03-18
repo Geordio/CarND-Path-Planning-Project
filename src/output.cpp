@@ -200,7 +200,20 @@ void OutputEgo(double max_speed, double ego_target_speed, double ego_req_speed, 
   OutputData(data0x, labelEgoCoorddy, std::to_string(ego_car_d));
 }
 
-void OutputLaneSummary(Lane& lane0, Lane& lane1, Lane& lane2) {
+void OutputLaneSummary(vector<Lane> lanes) {
+  Lane lane0 = lanes[0];
+  Lane lane1 = lanes[1];
+  Lane lane2 = lanes[2];
+
+  OutputData(data0x, labelLaneCosty, "                                        ");
+  OutputData(data1x, labelLaneCosty, "                                        ");
+  OutputData(data2x, labelLaneCosty, "                                        ");
+  OutputData(data0x, labelLaneAhdDSy, "                                        ");
+  OutputData(data1x, labelLaneAhdDSy, "                                        ");
+  OutputData(data2x, labelLaneAhdDSy, "                                        ");
+  OutputData(data0x, labelLaneCosty, "                                        ");
+  OutputData(data1x, labelLaneCosty, "                                        ");
+  OutputData(data2x, labelLaneCosty, "                                        ");
 
   OutputData(data0x, labelLaneCnty, std::to_string(lane0.numberTotalCars));
   OutputData(data1x, labelLaneCnty, std::to_string(lane1.numberTotalCars));
@@ -223,6 +236,9 @@ void OutputLaneSummary(Lane& lane0, Lane& lane1, Lane& lane2) {
   OutputData(data1x, labelLaneAhdSy,lane1.getNearestProjectedAheadCarSTxt());
   OutputData(data2x, labelLaneAhdSy,lane2.getNearestProjectedAheadCarSTxt());
 
+  OutputData(data0x, labelLaneAhdDSy,std::to_string(lane0.nearest_ahead_car.delta_s));
+  OutputData(data1x, labelLaneAhdDSy,std::to_string(lane1.nearest_ahead_car.delta_s));
+  OutputData(data2x, labelLaneAhdDSy,std::to_string(lane2.nearest_ahead_car.delta_s));
 
   OutputData(data0x, labelLaneAhdDSpdy,std::to_string(lane0.getNearestAheadCar().delta_speed));
   OutputData(data1x, labelLaneAhdDSpdy,std::to_string(lane1.getNearestAheadCar().delta_speed));
