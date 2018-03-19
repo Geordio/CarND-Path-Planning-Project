@@ -68,7 +68,7 @@ The vehicle is able to navigate the track completely, completing the target dist
 Ocasionally an accident can occur if a vehilce in an adjacent lane changes into the eg vehicle path if the closing speed is too great, meaning that there is not enough tine to slow. This could and should be avoided by predicting the behaviour of the vehilces in adjacent lanes, which I plan to update when I have time.
 
 Below is a sample video of a section of journey.
-<img src="https://github.com/Geordio/https://github.com/Geordio/CarND-Path-Planning-Project/blob/master/data/pathplanning6.gif" alt="path"  width="478" height="188"/>
+<img src="https://github.com/Geordio/CarND-Path-Planning-Project/blob/master/data/pathplanning6.gif" alt="path"  width="478" height="188"/>
 
 
 
