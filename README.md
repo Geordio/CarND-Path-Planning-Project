@@ -1,6 +1,81 @@
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
-   
+
+## Overview
+
+This README forms the project writeup from the Udacity Self Driving Car Nanodegree Path Planning project.
+My solution consists of the following files:
+
+File  |  Description
+--|---|--
+main.cpp  | The entry point and handler of messages from the simulator
+Lane.cpp; .h  | Defines the Lane class that is used to represent each lane of the highway. Each lane is able to have a number of cars associated with it.
+Car.cpp; .h  | Defines a Car class that represents each individual car forming the traffic encountered
+Output.cpp; .h | Contains helper functions that output the traffic and car data to the terminal to allow debug and analysis
+spline.h  | 3rd party cubic spline interpolation library used to plot a spline to the ego vehicle path
+
+The project can be built using `cmake .. && make`
+Note, the project was developed in Linux, and uses terminal window to output data relating to the ego vehicle and other traffic. Access to the console in windows is different and may cause errors.
+
+### Model Documentation
+
+#### Behavior Planner
+
+
+The behaviour planner logic is split between the main.cpp and the lane.cpp files. In hindsight this should be refactored into a behaviour planner class (and Lane class) for clarity.
+
+In the main.cpp file, upon receiving a message from the simulator, the message is decoded into the Ego vehicle data, and the sensor fusion data that represents the other cars on the highway. Frenet coordinates system is used to reprent the lateral and longitudinal position of the vehicles. The speed of the other vehicles on the road is calculated by taking the square root of the sum of the squares of the x and y  velocities.
+
+Once the data has been decoded, a Car object is created to represent each of the other cars on the road, and they are then allocated to the appropriate lane object that represents each of the lanes.
+The behaviour (i.e which lane to follow) is then determined by the analysis of the traffic on the highway. The Lane class is provided that represents a single lane of the highway, and includes the vehicles in that lane. In addition it provides multiple methods for reporting the relative position of the other vehicles in that lane, e.g their current S location and projected S position in Frenet at the point of the Ego vehicle's currently planned path being completed. Vehicles are categories as Threat Vehicles if their location means that they would be a hazard to the ego vehicle if it was in that lane )or to change into that lane). A cost method 'getLaneEfficencyCost' returns the efficency cost of that lane. Originally I combined the efficency and safety into a single cost function, but found that tuning the weights to be difficult. Hence I decided to use a 'hasThreatCars' property to represent if the lane was not safe. This is calculated by analysing the other vehicles position in relation to a defined threat zone that would place the vehilce near to the ego vehicle, but in addition, in particularly in order to prevent collisions at startup, the closing speed of the other vehicles in checked, and if the closing speed of a car behind is much greater than the ego vehicles speed, then it is also deemed unsafe.
+The efficency cost is very simple, and is based on the nearest vehicle ahead of the ego car in that lanes distance and speed. If that vehicle is less than 50m ahead of the Ego vehicle a cost is created for the lane. This is intented to determine if the vehicle will be held up by the target vehilce. See code snippet below (note excessive casting to double due to some issues in development, I decided to explicitly cast all the weights)
+
+```cpp
+if (hasAheadCar) {
+  if (nearest_ahead_car.delta_s < 50) {
+    next_ahead_car_cost = (double)(((double)50.0-this->nearest_ahead_car_speed)/(double)50.0 + (double)2.0/nearest_ahead_car.delta_s);
+  }
+}
+else
+  next_ahead_car_cost =0;
+```
+
+After this, there is a slight benefit for being in the inside lane.
+
+```cpp
+if (laneNumber == 2 ){
+  not_inside_lane_cost = 0;
+}
+else
+{
+  not_inside_lane_cost = 0.05;
+}
+```  
+
+For efficency, it would be better if the vehicle was biased to stay in the centre lane where possible, however, this is illegal in my country (the UK) so I made the vehicle return to the inside lane whenever possible. This potentially causes inefficencies, as sometimes the best lane may be 2 lanes over.
+
+After all the sensor data has been processed, and each car in th etraffic added to th eappropriate lane, the evaluate() method can be called on each lane object to analyse the lane and calculate the costs.
+
+One the most efficent lane is known, a very simple state machine using 2 states LaneChange and StayInLane is used to manage the lane changes. When the vehicle is in the StayInLane state, the efficency is checked to determine if the most efficent lane is not the current lane, and if so, attempt to change lanes. However, before changing lanes, the safety of the target lane is checked. In my mind, this is like an ADAS system overriding the more complex autonomy system of a real car, and providing a well established foundation of safety.
+If the most efficent lane is not adjacent to the current lane, the planner not attempt to make the lane chaneg in one go, instead it will identify the next lane to go to, and make that transition. After completing that transition, it will reveryt o StayInLane, and re-evaluate the efficient of the lanes again, and then plan the next move. In most cases, the original target lane will still be the best lane so the vehicle will transition to that. I implemented it this way as I believe that this is the method that most drivers use to perform this operation. When in the act of changing lanes, the state machine will be LaneChange state. In this state the efficency is not checked again, but the safety is checked. Hence if a new hazard arises, such as another vehilce merging into that lane, the ego vehicle can abort and return to its original lane.
+
+The ego vehilce speed is attempted to maintained as close to the speed limit as possible. If the ego vehicle is stuck in traffic behind another vehicle, it will use the sensor fusion data to get that vehicles actual speed and set its own target speed to match this.
+
+Once the speed and target lane have been identified, a path is calculated using the method presented by Aaron Brown and David Silver in the walkthrough. In summary, the 3rd party spline library (from http://kluge.in-chemnitz.de/opensource/spline/) is used to plot a cubic spline to the targeted end point (the d of the centre of the target lane). 50 points are fitted to the spline. The ego car will attempt to reach each subsequent point every 0.02s, hence spacing of the points controls the vehicle speed.
+Before creating the spline, the target points are converted to vehicle coordinates from Frenet.
+
+The vehicle is able to navigate the track completely, completing the target distance of 4.32 miles without incident.
+Ocasionally an accident can occur if a vehilce in an adjacent lane changes into the eg vehicle path if the closing speed is too great, meaning that there is not enough tine to slow. This could and should be avoided by predicting the behaviour of the vehilces in adjacent lanes, which I plan to update when I have time.
+
+Below is a sample video of a section of journey.
+
+
+
+
+## Reference
+
+The original udacity readme and setup instructions are below this point for completeness.
+
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
 
@@ -38,13 +113,13 @@ Here is the data provided from the Simulator to the C++ Program
 #### Previous path data given to the Planner
 
 //Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
-the path has processed since last time. 
+the path has processed since last time.
 
 ["previous_path_x"] The previous list of x points previously given to the simulator
 
 ["previous_path_y"] The previous list of y points previously given to the simulator
 
-#### Previous path's end s and d values 
+#### Previous path's end s and d values
 
 ["end_path_s"] The previous list's last point's frenet s value
 
@@ -52,7 +127,7 @@ the path has processed since last time.
 
 #### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
 
-["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates. 
+["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates.
 
 ## Details
 
@@ -82,7 +157,7 @@ A really helpful resource for doing this project and creating smooth trajectorie
   * Run either `install-mac.sh` or `install-ubuntu.sh`.
   * If you install from source, checkout to commit `e94b6e1`, i.e.
     ```
-    git clone https://github.com/uWebSockets/uWebSockets 
+    git clone https://github.com/uWebSockets/uWebSockets
     cd uWebSockets
     git checkout e94b6e1
     ```
@@ -137,4 +212,3 @@ still be compilable with cmake and make./
 
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
-
