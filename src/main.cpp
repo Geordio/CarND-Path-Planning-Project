@@ -376,7 +376,7 @@ int main() {
           Lane lane1;
           Lane lane2;
 
-          // allocate the IDs to each lane
+          // allocate the Lane IDs to each lane
           lane0.laneNumber = lane_num0;
           lane1.laneNumber = lane_num1;
           lane2.laneNumber = lane_num2;
@@ -398,12 +398,14 @@ int main() {
             double sensed_car_delta_speed = sensed_car_v * 2.24 - ego_car_speed; // in mph
             double sensed_car_projected_s = sensed_car_s + ((double)(((prev_size))) * 0.02 * sensed_car_v);
             //calculate the projected delta s
-            // should this be form the ego_car_s or the projected_ego_car_s?
+
             double projected_delta_s = sensed_car_projected_s - end_path_s;
+            // create a car objetc to represent this vehilce
             Car this_car = Car(sensed_car_id, sensed_car_s, sensed_car_d, sensed_car_v, delta_s, sensed_car_projected_s, projected_delta_s, sensed_car_delta_speed);
+
+
+            // allocate to the appropriate lane
             //lane 0
-            //TODO, sort out the lane poisiton calcs, unnecessarily complex 4* (lane_num0 +1)
-            // upper boundary                        lower boundary
             if (sensed_car_d < (4* (lane_num0 +1)) && sensed_car_d > (4 * lane_num0)) {
               lane0.addCar(this_car);
             } else
@@ -415,9 +417,6 @@ int main() {
                 }
           }
 
-//          OutputData(data0x, labelEgoStatey, std::to_string(lane0.laneNumber));
-//          OutputData(data1x, labelEgoStatey, std::to_string(lane1.laneNumber));
-//          OutputData(data2x, labelEgoStatey, std::to_string(lane2.laneNumber));
           // evaluate the lanes
           lane0.evaluate();
           lane1.evaluate();
@@ -472,7 +471,7 @@ int main() {
               state = STAYINLANE;
             }
             //
-            // about the move if the taret lane is unsafe
+            // about the move if the target lane is unsafe
             else if (lanes[next_lane].hasThreatCars == true){
               next_lane = last_lane;
             }
@@ -485,7 +484,6 @@ int main() {
           // check if the ego vehicle is close to the target vehicle
           double ego_target_speed = max_speed;
           if (current_lane_obj.hasAheadCar) {
-//            cout << endl<< "\t\t\t\t\t\t\t\t\t\tcar ahead"<< endl;
             Car target_car = current_lane_obj.getNearestAheadCar();;
 
             if ((target_car.projected_delta_s) < SAFETY_DISTANCE) {
@@ -506,12 +504,14 @@ int main() {
             ego_req_speed = max_speed;
           }
 
-          if ((count_of_msgs % 5)  == 0) {
+
+          // output some debug
+          if ((count_of_msgs % 10)  == 0) {
             OutputEgo(max_speed, ego_target_speed, ego_req_speed, ego_car_speed, ego_car_x,ego_car_y, ego_car_actual_s, end_path_s, ego_car_d);
           }
 
 
-          if ((count_of_msgs % 5)  == 0) {
+          if ((count_of_msgs % 10)  == 0) {
             OutputLaneSummary(lanes);
           }
 

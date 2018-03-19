@@ -267,11 +267,6 @@ double Lane::getLaneEfficencyCost() {
     next_ahead_car_cost =0;
 
 
-  // TODO consider all ahead cars
-  //  if (hasProjectedAheadCar)
-  //    congestion_cost = (this->getNumberAheadCars())/10;
-  //  else
-  //    congestion_cost = 0;
 if (laneNumber == 2 ){
   not_inside_lane_cost = 0;
 }
@@ -304,8 +299,6 @@ void Lane::sortByDeltaS(){
 }
 
 void Lane::sortByProjectedDeltaS(){
-  //  std::sort(lane_cars.begin(), lane_cars.end(), compareCars);
-  //  std::sort(cars.begin(), cars.end(), compareCars);
 
   std::sort(lane_cars.begin(), lane_cars.end(),
       [](Car const & a, Car const & b) -> bool
