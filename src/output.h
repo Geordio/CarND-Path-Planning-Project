@@ -7,7 +7,7 @@
 
 //#include <curses.h>
 #include <unistd.h>
-#include <term.h>
+//#include <term.h>
 #include "car.h"
 #include "lane.h"
 
